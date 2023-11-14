@@ -4,10 +4,10 @@ channels:
   - defaults
   - anaconda
 dependencies:
-  - fastqc=0.11.9
-  - cutadapt=3.4
-  - bwa=0.7017
-  - samtools=1.22
-  - gatk4=4.2.2.0
-  - lorfeq=2.1.5
-  - bedtools
+  - fastqc=0.12.1
+  - cutadapt=4.5
+  - bwa=0.7.17
+  - samtools=1.18
+  - gatk4=4.4.0.0
+  - lofreq=2.1.5
+  - bedtools=2.31.1
