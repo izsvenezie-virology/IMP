@@ -23,4 +23,5 @@ workflow {
 
     FastQCRaw(samples, 'raw')
     Cutadapt(samples)
+    FastQCClean(Cutadapt.out, 'clean')
 }
