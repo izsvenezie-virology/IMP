@@ -1,4 +1,6 @@
 process BWAmem {
+    publishDir "alignments", saveAs: { fileName -> "${meta.sample}__${meta.reference}.bam" }, mode: 'symlink'
+
     input:
         tuple val(meta), path(reads), path(reference), path(index)
     output:
@@ -11,8 +13,6 @@ process BWAmem {
 }
 
 process BWAIndex{
-    debug true
-
     input:
         tuple val(meta), path('reference.fa')
     output:
