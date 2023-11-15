@@ -11,6 +11,9 @@ include {
     BWAmem;
     BWAIndex;
 } from './modules/bwa.nf'
+include{
+    GenomeCov;
+} from './modules/bedtools.nf'
 
 workflow {
 
@@ -40,4 +43,6 @@ workflow {
     | join( BWAIndex.out )
     | map { row -> row.tail() }
     | BWAmem
+
+    GenomeCov(BWAmem.out)
 }
