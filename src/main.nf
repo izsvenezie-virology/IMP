@@ -43,7 +43,7 @@ workflow {
 
     Cutadapt.out
     | map { row -> [row[0].reference, row[0], row[1]] }
-    | join( BWAIndex.out )
+    | combine( BWAIndex.out, by: 0)
     | map { row -> row.tail() }
     | BWAmem
 
