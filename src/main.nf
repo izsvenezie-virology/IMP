@@ -14,6 +14,9 @@ include {
 include{
     GenomeCov;
 } from './modules/bedtools.nf'
+include{
+    CoveragePlotter;
+} from './modules/coverplotter.nf'
 
 workflow {
 
@@ -45,4 +48,5 @@ workflow {
     | BWAmem
 
     GenomeCov(BWAmem.out)
+    | CoveragePlotter
 }
