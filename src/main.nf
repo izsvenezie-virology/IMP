@@ -31,11 +31,19 @@ workflow {
     | map { row -> [row[1], row[2]]}
     | set { samples }
 
-    Channel.fromPath('references/*.fa')
-    | map{ row -> [row.simpleName, row] }
+    samples
+    | branch {
+        FindRef: it[0].reference == ''
+            it[0].reference = "${it[0].sample}_ref"
+            return [it[0].reference, it[1]]
+        RefProvided: true
+            def refFile = file(it[0].reference, checkIfExists: true)
+            it[0].reference = refFile.simpleName
+            return [ refFile.simpleName, refFile ]
+    }
     | set { references }
 
-    BWAIndex(references)
+    BWAIndex(references.RefProvided)
 
     FastQCRaw(samples, 'raw')
     Cutadapt(samples)
