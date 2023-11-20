@@ -11,3 +11,10 @@ dependencies:
   - gatk4=4.4.0.0
   - lofreq=2.1.5
   - bedtools=2.31.1
+  - blast=2.15.0
+  - seqtk=1.4
+  - pip
+  - pip:
+    - git+https://gitlab.izsvenezie.it/EdoardoGiussani/consenser
+    - git+https://gitlab.izsvenezie.it/EdoardoGiussani/cover_plotter
+    - git+https://gitlab.izsvenezie.it/EdoardoGiussani/fastatools
