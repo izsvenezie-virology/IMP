@@ -17,6 +17,9 @@ include{
 include{
     CoveragePlotter;
 } from './modules/coverplotter.nf'
+include{
+    FastqToFasta
+} from './modules/seqtk.nf'
 
 workflow {
 
@@ -42,6 +45,9 @@ workflow {
             return [ refFile.simpleName, refFile ]
     }
     | set { references }
+
+    references.FindRef
+    | FastqToFasta
 
     BWAIndex(references.RefProvided)
 
