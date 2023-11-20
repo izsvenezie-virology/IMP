@@ -20,8 +20,14 @@ include{
 include{
     FastqToFasta
 } from './modules/seqtk.nf'
+include{
+    BlastN
+} from './modules/blast.nf'
 
 workflow {
+    Channel.fromPath('ref_db/gisaid_epiflu_all_unique.fa.*')
+    | toList
+    | set {ref_db}
 
     Channel.fromFilePairs("raw_reads/*_R{1,2}*fastq.gz")
     | map{row -> [row[0].split("_S")[0], row[1]]}  
@@ -46,8 +52,8 @@ workflow {
     }
     | set { references }
 
-    references.FindRef
-    | FastqToFasta
+    FastqToFasta(references.FindRef)
+    BlastN(FastqToFasta.out, ref_db)
 
     BWAIndex(references.RefProvided)
 
