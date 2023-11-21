@@ -57,7 +57,7 @@ workflow {
     FastQCClean( Cutadapt.out, 'clean' )
 
     // References collection channel creation
-    samples
+    Cutadapt.out
     | branch {
         FindRef: it[0].reference_file == ''
             it[0].reference = "${it[0].sample}_ref"
