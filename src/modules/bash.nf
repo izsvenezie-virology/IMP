@@ -1,4 +1,6 @@
 process GetReference{
+    publishDir "refs", saveAs: { "${meta}.fa" }, mode: 'copy'
+
     input:
         tuple val(meta), path(ref_names)
         path(db_fasta)
