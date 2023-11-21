@@ -31,12 +31,14 @@ include{
 } from './modules/bash.nf'
 
 workflow {
+    // BLAST DB channels
     Channel.fromPath('ref_db/gisaid_epiflu_all_unique.fa.*')
     | toList
     | set { ref_db }
     Channel.fromPath('ref_db/gisaid_epiflu_all_unique.fa')
     | set { ref_fasta }
 
+    // Samples channels creation
     Channel.fromFilePairs("raw_reads/*_R{1,2}*fastq.gz")
     | map { row -> [row[0].split("_S")[0], row[1]] }  
     | set { raw_reads }
@@ -48,10 +50,12 @@ workflow {
     | map { row -> [row[1], row[2]] }
     | set { samples }
 
+    // Clean reads
     FastQCRaw( samples, 'raw' )
     Cutadapt( samples )
     FastQCClean( Cutadapt.out, 'clean' )
 
+    // References collection channel creation
     Cutadapt.out
     | branch {
         FindRef: it[0].reference == ''
@@ -64,17 +68,21 @@ workflow {
     }
     | set { ref_collect }
 
+    // Find missing references
     FastqToFasta( ref_collect.FindRef )
     BlastN( FastqToFasta.out, ref_db )
     GetReferenceNames( BlastN.out )
     GetReference( GetReferenceNames.out, ref_fasta )
 
+    // References channel creation
     GetReference.out
     | mix ( ref_collect.RefProvided )
     | set { references }
 
+    // Reference index processes
     BWAIndex( references )
 
+    // Reads alignment
     Cutadapt.out
     | map { row -> [row[0].reference, row[0], row[1]] }
     | combine( BWAIndex.out, by: 0 )
