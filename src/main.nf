@@ -36,6 +36,7 @@ workflow {
     | toList
     | set { ref_db }
     Channel.fromPath('ref_db/gisaid_epiflu_all_unique.fa')
+    | toList
     | set { ref_fasta }
 
     // Samples channels creation
