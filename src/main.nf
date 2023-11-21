@@ -33,22 +33,26 @@ include{
 workflow {
     Channel.fromPath('ref_db/gisaid_epiflu_all_unique.fa.*')
     | toList
-    | set {ref_db}
+    | set { ref_db }
     Channel.fromPath('ref_db/gisaid_epiflu_all_unique.fa')
-    | set {ref_fasta}
+    | set { ref_fasta }
 
     Channel.fromFilePairs("raw_reads/*_R{1,2}*fastq.gz")
-    | map{row -> [row[0].split("_S")[0], row[1]]}  
+    | map { row -> [row[0].split("_S")[0], row[1]] }  
     | set { raw_reads }
 
     Channel.fromPath('samplesheet.csv')
     | splitCsv( header:true, sep:'\t' )
     | map { row -> [row.Sample, [sample:row.Sample, name:row.Name, reference:row.Reference]] }
     | join( raw_reads )
-    | map { row -> [row[1], row[2]]}
+    | map { row -> [row[1], row[2]] }
     | set { samples }
 
-    samples
+    FastQCRaw( samples, 'raw' )
+    Cutadapt( samples )
+    FastQCClean( Cutadapt.out, 'clean' )
+
+    Cutadapt.out
     | branch {
         FindRef: it[0].reference == ''
             it[0].reference = "${it[0].sample}_ref"
@@ -56,31 +60,27 @@ workflow {
         RefProvided: true
             def refFile = file(it[0].reference, checkIfExists: true)
             it[0].reference = refFile.simpleName
-            return [ it[0].reference, refFile ]
+            return [it[0].reference, refFile]
     }
-    | set { references }
+    | set { ref_collect }
 
-    FastqToFasta(references.FindRef)
-    BlastN(FastqToFasta.out, ref_db)
-    GetReferenceNames(BlastN.out)
-    GetReference(GetReferenceNames.out, ref_fasta)
+    FastqToFasta( ref_collect.FindRef )
+    BlastN( FastqToFasta.out, ref_db )
+    GetReferenceNames( BlastN.out )
+    GetReference( GetReferenceNames.out, ref_fasta )
 
     GetReference.out
-    | mix (references.RefProvided)
-    | set { refs }
+    | mix ( ref_collect.RefProvided )
+    | set { references }
 
-    BWAIndex(refs)
-
-    FastQCRaw(samples, 'raw')
-    Cutadapt(samples)
-    FastQCClean(Cutadapt.out, 'clean')
+    BWAIndex( references )
 
     Cutadapt.out
     | map { row -> [row[0].reference, row[0], row[1]] }
-    | combine( BWAIndex.out, by: 0)
+    | combine( BWAIndex.out, by: 0 )
     | map { row -> row.tail() }
     | BWAmem
 
-    GenomeCov(BWAmem.out)
+    GenomeCov( BWAmem.out )
     | CoveragePlotter
 }
