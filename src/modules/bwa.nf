@@ -1,10 +1,10 @@
 process BWAmem {
-    publishDir "alignments", saveAs: { fileName -> "${meta.sample}__${meta.reference}.bam" }, mode: 'symlink'
+    publishDir "alignments", saveAs: { "${meta.sample}__${meta.reference}.bam" }, mode: 'symlink'
 
     input:
         tuple val(meta), path(reads), path(reference), path(index)
     output:
-        tuple val(meta), path('sorted.bam')
+        tuple val(meta), path('*')
     
     """
     bwa mem -t $task.cpus -R '@RG\\tID:${meta.sample}\\tSM:${meta.sample}\\tPL:ILLUMINA' -M $reference $reads |
@@ -14,11 +14,11 @@ process BWAmem {
 
 process BWAIndex{
     input:
-        tuple val(meta), path('reference.fa')
+        tuple val(meta), path(reference)
     output:
-        tuple val(meta), path('reference.fa', includeInputs: true), path('*')
+        tuple val(meta), path(reference, includeInputs: true), path('*')
     
     """
-    bwa index reference.fa
+    bwa index $reference
     """
 }

@@ -1,10 +1,10 @@
 process DictIndex{
     input:
-        tuple val(meta), path('reference.fa')
+        tuple val(meta), path(reference)
     output:
-        tuple val(meta), path('reference.fa', includeInputs: true), path('*')
+        tuple val(meta), path(reference, includeInputs: true), path('*')
 
     """
-    gatk CreateSequenceDictionary -R reference.fa
+    gatk CreateSequenceDictionary -R $reference
     """
 }

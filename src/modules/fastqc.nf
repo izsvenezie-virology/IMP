@@ -5,7 +5,7 @@ process FastQC {
 
     input:
         tuple val(meta), path(reads)
-        val(type) // "raw/clean" before/after reads clean up
+        val(type) // "raw"/"clean" before/after reads clean up
         
     output:
         tuple val(meta), path('*html')

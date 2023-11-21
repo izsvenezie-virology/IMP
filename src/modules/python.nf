@@ -7,5 +7,4 @@ process GetReferenceNames{
     """
     extract_reference.py $best_hits >ref_names.txt
     """
-    
 }

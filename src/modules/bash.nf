@@ -9,6 +9,5 @@ process GetReference{
 
     """
     grep --no-group-separator -A 1 -f $ref_names $db_fasta | sed -E 's/.+\|/>/g' >reference.fa
-    """
-    
+    """    
 }
