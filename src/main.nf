@@ -78,6 +78,7 @@ workflow {
     // References channel creation
     GetReference.out
     | mix ( ref_collect.RefProvided )
+    | unique
     | set { references }
 
     // Reference index processes
