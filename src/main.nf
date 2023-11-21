@@ -34,6 +34,7 @@ include{
 } from './modules/samtools.nf'
 include{
     DictIndex;
+    FixBam;
 } from './modules/gatk.nf'
 
 workflow {
@@ -101,4 +102,7 @@ workflow {
 
     GenomeCov( BWAmem.out )
     | CoveragePlotter
+
+    // GATK best practices
+    FixBam( BWAmem.out )
 }
