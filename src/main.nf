@@ -23,11 +23,19 @@ include{
 include{
     BlastN
 } from './modules/blast.nf'
+include{
+    GetReferenceNames;
+} from './modules/python.nf'
+include{
+    GetReference;
+} from './modules/bash.nf'
 
 workflow {
     Channel.fromPath('ref_db/gisaid_epiflu_all_unique.fa.*')
     | toList
     | set {ref_db}
+    Channel.fromPath('ref_db/gisaid_epiflu_all_unique.fa')
+    | set {ref_fasta}
 
     Channel.fromFilePairs("raw_reads/*_R{1,2}*fastq.gz")
     | map{row -> [row[0].split("_S")[0], row[1]]}  
@@ -48,14 +56,20 @@ workflow {
         RefProvided: true
             def refFile = file(it[0].reference, checkIfExists: true)
             it[0].reference = refFile.simpleName
-            return [ refFile.simpleName, refFile ]
+            return [ it[0].reference, refFile ]
     }
     | set { references }
 
     FastqToFasta(references.FindRef)
     BlastN(FastqToFasta.out, ref_db)
+    GetReferenceNames(BlastN.out)
+    GetReference(GetReferenceNames.out, ref_fasta)
 
-    BWAIndex(references.RefProvided)
+    GetReference.out
+    | mix (references.RefProvided)
+    | set { refs }
+
+    BWAIndex(refs)
 
     FastQCRaw(samples, 'raw')
     Cutadapt(samples)
