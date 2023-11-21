@@ -35,6 +35,7 @@ include{
 include{
     DictIndex;
     FixBam;
+    CleanBam;
 } from './modules/gatk.nf'
 
 workflow {
@@ -105,4 +106,5 @@ workflow {
 
     // GATK best practices
     FixBam( BWAmem.out )
+    CleanBam( FixBam.out )
 }
