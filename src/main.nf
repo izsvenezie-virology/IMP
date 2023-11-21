@@ -45,7 +45,7 @@ workflow {
 
     Channel.fromPath('samplesheet.csv')
     | splitCsv( header:true, sep:'\t' )
-    | map { row -> [row.Sample, [sample:row.Sample, name:row.Name, reference:row.Reference]] }
+    | map { row -> [row.Sample, [sample:row.Sample, name:row.Name, reference_file:row.Reference]] }
     | join( raw_reads )
     | map { row -> [row[1], row[2]] }
     | set { samples }
@@ -56,13 +56,13 @@ workflow {
     FastQCClean( Cutadapt.out, 'clean' )
 
     // References collection channel creation
-    Cutadapt.out
+    samples
     | branch {
-        FindRef: it[0].reference == ''
+        FindRef: it[0].reference_file == ''
             it[0].reference = "${it[0].sample}_ref"
             return [it[0].reference, it[1]]
-        RefProvided: true
-            def refFile = file(it[0].reference, checkIfExists: true)
+        RefProvided: it[0].reference_file != ''
+            def refFile = file(it[0].reference_file, checkIfExists: true)
             it[0].reference = refFile.simpleName
             return [it[0].reference, refFile]
     }
