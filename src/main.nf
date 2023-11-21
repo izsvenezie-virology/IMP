@@ -29,6 +29,12 @@ include{
 include{
     GetReference;
 } from './modules/bash.nf'
+include{
+    FaidxIndex;
+} from './modules/samtools.nf'
+include{
+    DictIndex;
+} from './modules/gatk.nf'
 
 workflow {
     // BLAST DB channels
@@ -83,6 +89,8 @@ workflow {
 
     // Reference index processes
     BWAIndex( references )
+    FaidxIndex( references )
+    DictIndex( references )
 
     // Reads alignment
     Cutadapt.out
