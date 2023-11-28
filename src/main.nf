@@ -93,16 +93,17 @@ workflow {
     GetReference.out
     | mix ( ref_collect.RefProvided )
     | unique
-    | set { references }
+    | set { References }
 
     // Reference index processes
-    BWAIndex( references )
-    FaidxIndex( references )
-    DictIndex( references )
+    BWAIndex( References )
+    FaidxIndex( References )
+    DictIndex( References )
 
     // Reads alignment
     Cutadapt.out
     | map { row -> [row[0].reference, row[0], row[1]] }
+    | combine( References, by: 0)
     | combine( BWAIndex.out, by: 0 )
     | map { row -> row.tail() }
     | BWAmem
@@ -112,18 +113,24 @@ workflow {
 
     // GATK best practices
     FixBam( BWAmem.out )
+
     CleanBam( FixBam.out )
+
     CleanBam.out
     | map { row -> [row[0].reference, row[0], row[1]] }
+    | combine( References, by: 0)
     | combine( BWAIndex.out, by: 0 )
     | map { row -> row.tail() }
     | Viterbi
+
     MDSort(Viterbi.out)
+
     MarkDuplicates( MDSort.out )
+
     MarkDuplicates.out
     | map { row -> [row[0].reference, row[0], row[1]] }
-    | combine( references, by: 0 )
+    | combine( References, by: 0 )
     | map { row -> row.tail() }
-    | set { fake_call_lofreq }
-    FakeCall(fake_call_lofreq, false)
+    | set { md_reference }
+    FakeCall(md_reference, false)
 }

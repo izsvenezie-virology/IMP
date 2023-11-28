@@ -16,7 +16,7 @@ process BWAIndex{
     input:
         tuple val(meta), path(reference)
     output:
-        tuple val(meta), path(reference, includeInputs: true), path('*')
+        tuple val(meta), path('*')
     
     """
     bwa index $reference
