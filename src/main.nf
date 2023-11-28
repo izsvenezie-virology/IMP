@@ -37,6 +37,9 @@ include{
     FixBam;
     CleanBam;
 } from './modules/gatk.nf'
+include{
+    Viterbi;
+} from './modules/lofreq.nf'
 
 workflow {
     // BLAST DB channels
@@ -107,4 +110,9 @@ workflow {
     // GATK best practices
     FixBam( BWAmem.out )
     CleanBam( FixBam.out )
+    CleanBam.out
+    | map { row -> [row[0].reference, row[0], row[1]] }
+    | combine( BWAIndex.out, by: 0 )
+    | map { row -> row.tail() }
+    | Viterbi
 }
