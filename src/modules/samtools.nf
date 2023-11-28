@@ -8,3 +8,13 @@ process FaidxIndex{
     samtools faidx $reference
     """
 }
+
+process Sort{
+    input:
+        tuple val(meta), path(bam)
+    output:
+        tuple val(meta), path('*')
+    """
+    samtools sort -O bam -o sorted.bam $bam
+    """
+}
