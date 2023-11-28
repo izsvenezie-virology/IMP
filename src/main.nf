@@ -38,6 +38,9 @@ include{
     FixBam;
     CleanBam;
     MarkDuplicates;
+    BaseRecalibrator;
+    IndexFeatureFile;
+    ApplyBQSR;
 } from './modules/gatk.nf'
 include{
     Viterbi;
@@ -133,4 +136,20 @@ workflow {
     | map { row -> row.tail() }
     | set { md_reference }
     FakeCall(md_reference, false)
+
+    IndexFeatureFile(FakeCall.out)
+
+    MarkDuplicates.out
+    | map { row -> [row[0].reference, row[0], row[1]] }
+    | combine( References, by: 0)
+    | combine( FaidxIndex.out, by: 0 )
+    | combine( DictIndex.out, by: 0)
+    | map { row -> row.tail() }
+    | combine( FakeCall.out, by: 0 )
+    | combine( IndexFeatureFile.out, by: 0 )
+    | BaseRecalibrator
+
+    MarkDuplicates.out
+    | combine( BaseRecalibrator.out, by: 0 )
+    | ApplyBQSR
 }
