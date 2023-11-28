@@ -18,3 +18,13 @@ process Sort{
     samtools sort -O bam -o sorted.bam $bam
     """
 }
+
+process BamIndex{
+    input:
+        tuple val(meta), path(bam)
+    output:
+        tuple val(meta), path('*')
+    """
+    samtools index $bam
+    """
+}
