@@ -44,7 +44,8 @@ include{
 } from './modules/gatk.nf'
 include{
     Viterbi;
-    Call as FakeCall;
+    Call as FakeVariantCall;
+    Call as VariantCall;
 } from './modules/lofreq.nf'
 
 workflow {
@@ -135,7 +136,7 @@ workflow {
     | combine( References, by: 0 )
     | map { row -> row.tail() }
     | set { md_reference }
-    FakeCall(md_reference, false)
+    FakeVariantCall(md_reference, false)
 
     IndexFeatureFile(FakeCall.out)
 
@@ -152,4 +153,11 @@ workflow {
     MarkDuplicates.out
     | combine( BaseRecalibrator.out, by: 0 )
     | ApplyBQSR
+
+    ApplyBQSR.out
+    | map { row -> [row[0].reference, row[0], row[1]] }
+    | combine( References, by: 0 )
+    | map { row -> row.tail() }
+    | set { bqsr_reference }
+    VariantCall( bqsr_reference, true )
 }
