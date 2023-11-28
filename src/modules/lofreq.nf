@@ -8,3 +8,17 @@ process Viterbi{
     lofreq viterbi -f $reference -o viterbi.bam $bam 
     """
 }
+
+process Call{
+    input:
+        tuple val(meta), path(bam), path(reference)
+        val(call_indels)
+    output:
+        tuple val(meta), path("variants.vcf")
+
+    script:
+    def call_indels_opt = call_indels ? '--call-indels' : '' // If call indels is true the call indels option is set
+    """
+    lofreq call -f $reference -o variants.vcf $bam $call_indels_opt
+    """
+}

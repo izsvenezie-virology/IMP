@@ -41,6 +41,7 @@ include{
 } from './modules/gatk.nf'
 include{
     Viterbi;
+    Call as FakeCall;
 } from './modules/lofreq.nf'
 
 workflow {
@@ -119,4 +120,10 @@ workflow {
     | Viterbi
     MDSort(Viterbi.out)
     MarkDuplicates( MDSort.out )
+    MarkDuplicates.out
+    | map { row -> [row[0].reference, row[0], row[1]] }
+    | combine( references, by: 0 )
+    | map { row -> row.tail() }
+    | set { fake_call_lofreq }
+    FakeCall(fake_call_lofreq, false)
 }
