@@ -31,11 +31,13 @@ include{
 } from './modules/bash.nf'
 include{
     FaidxIndex;
+    Sort as MDSort;
 } from './modules/samtools.nf'
 include{
     DictIndex;
     FixBam;
     CleanBam;
+    MarkDuplicates;
 } from './modules/gatk.nf'
 include{
     Viterbi;
@@ -115,4 +117,6 @@ workflow {
     | combine( BWAIndex.out, by: 0 )
     | map { row -> row.tail() }
     | Viterbi
+    MDSort(Viterbi.out)
+    MarkDuplicates( MDSort.out )
 }

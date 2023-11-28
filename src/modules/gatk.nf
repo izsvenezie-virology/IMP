@@ -30,3 +30,15 @@ process CleanBam{
     gatk CleanSam -I ${bam} -O cleaned.bam
     """
 }
+
+process MarkDuplicates{
+    input:
+        tuple val(meta), path(bam)
+    output:
+        tuple val(meta), path("*.bam")
+
+    script:
+    """
+    gatk MarkDuplicates -I ${bam} -O marked_duplicates.bam -M marked_duplicates.metrics
+    """
+}
