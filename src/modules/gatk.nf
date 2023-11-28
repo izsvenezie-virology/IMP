@@ -68,7 +68,7 @@ process ApplyBQSR{
     input:
         tuple val(meta), path(bam), path(recalibration)
     output:
-        tuple val(meta), path("*")
+        tuple val(meta), path("*.bam"), path("*.bai")
 
     """
     gatk ApplyBQSR -I $bam -O bqsr.bam -bqsr $recalibration
