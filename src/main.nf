@@ -32,6 +32,7 @@ include{
 include{
     FaidxIndex;
     Sort as MDSort;
+    BamIndex;
 } from './modules/samtools.nf'
 include{
     DictIndex;
@@ -115,6 +116,8 @@ workflow {
     | combine( BWAIndex.out, by: 0 )
     | map { row -> row.tail() }
     | BWAmem
+
+    BamIndex(BWAmem.out)
 
     GenomeCov( BWAmem.out )
     | CoveragePlotter
