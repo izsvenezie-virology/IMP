@@ -47,6 +47,10 @@ include{
     Call as FakeVariantCall;
     Call as VariantCall;
 } from './modules/lofreq.nf'
+include{
+    Consensus as ConsensusDegenerated;
+    Consensus as ConsensusNotDegenerated;
+} from './modules/consenser.nf'
 
 workflow {
     // BLAST DB channels
@@ -160,4 +164,13 @@ workflow {
     | map { row -> row.tail() }
     | set { bqsr_reference }
     VariantCall( bqsr_reference, true )
+
+    VariantCall.out
+    | map { row -> [row[0].reference, row[0], row[1]] }
+    | combine( References, by: 0 )
+    | map { row -> row.tail() }
+    | combine( GenomeCov.out, by: 0 )
+    | set { vcf_reference_coverage } 
+    ConsensusDegenerated( vcf_reference_coverage, true )
+    ConsensusNotDegenerated( vcf_reference_coverage, false )
 }
