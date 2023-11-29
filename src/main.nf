@@ -138,7 +138,7 @@ workflow {
     | set { md_reference }
     FakeVariantCall(md_reference, false)
 
-    IndexFeatureFile(FakeCall.out)
+    IndexFeatureFile(FakeVariantCall.out)
 
     MarkDuplicates.out
     | map { row -> [row[0].reference, row[0], row[1]] }
@@ -146,7 +146,7 @@ workflow {
     | combine( FaidxIndex.out, by: 0 )
     | combine( DictIndex.out, by: 0)
     | map { row -> row.tail() }
-    | combine( FakeCall.out, by: 0 )
+    | combine( FakeVariantCall.out, by: 0 )
     | combine( IndexFeatureFile.out, by: 0 )
     | BaseRecalibrator
 
