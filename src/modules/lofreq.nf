@@ -10,6 +10,8 @@ process Viterbi{
 }
 
 process Call{
+    publishDir 'vcfs', saveAs: { "${meta.sample}__${meta.reference}.vcf" }, mode: 'copy', enabled: "$call_indels"
+
     input:
         tuple val(meta), path(bam), path(reference)
         val(call_indels)

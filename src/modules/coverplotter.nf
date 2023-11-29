@@ -1,5 +1,6 @@
 process CoveragePlotter {
     errorStrategy 'ignore'
+    
     publishDir "coverage", saveAs: { "${meta.sample}__${meta.reference}.pdf" }, mode: 'copy'
 
     input:

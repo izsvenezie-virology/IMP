@@ -20,6 +20,8 @@ process Sort{
 }
 
 process BamIndex{
+    publishDir "alignments", saveAs: { "${meta.sample}__${meta.reference}.bai" }
+
     input:
         tuple val(meta), path(bam)
     output:

@@ -1,5 +1,5 @@
 process BWAmem {
-    publishDir "alignments", saveAs: { "${meta.sample}__${meta.reference}.bam" }, mode: 'symlink'
+    publishDir "alignments", saveAs: { "${meta.sample}__${meta.reference}.bam" }, mode: 'copy'
 
     input:
         tuple val(meta), path(reads), path(reference), path(index)

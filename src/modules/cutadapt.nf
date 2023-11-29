@@ -1,5 +1,6 @@
 process Cutadapt {
-    publishDir "clean_reads", saveAs:  { fileName -> fileName.contains("_R1_") ? "${meta.sample}_R1_clean.fastq.gz" : "${meta.sample}_R2_clean.fastq.gz" }
+    publishDir "clean_reads", saveAs: { "${meta.sample}_R1_clean.fastq.gz" }, mode: 'symlink', pattern: '*_R1_*'
+    publishDir "clean_reads", saveAs: { "${meta.sample}_R2_clean.fastq.gz" }, mode: 'symlink', pattern: '*_R2_*'
 
     input:
         tuple val(meta), path(reads)

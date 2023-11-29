@@ -1,5 +1,5 @@
 process GenomeCov {
-    publishDir "coverage/raw", saveAs: { "${meta.sample}__${meta.reference}.tsv" }, mode: 'symlink'
+    publishDir "coverage/raw", saveAs: { "${meta.sample}__${meta.reference}.tsv" }, mode: 'copy'
 
     input:
         tuple val(meta), path(bam)
