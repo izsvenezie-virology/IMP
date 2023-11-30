@@ -70,7 +70,9 @@ workflow {
 
     Channel.fromPath('samplesheet.csv')
     | splitCsv( header:true, sep:'\t' )
-    | map { row -> [row.Sample, [sample:row.Sample, name:row.Name, reference_file:row.Reference]] }
+    | map { row -> 
+            reference = row.Reference ? file(row.Reference).simpleName : "${row.Sample}_ref"
+            [row.Sample, [sample:row.Sample, name:row.Name, reference:reference, reference_file:row.Reference]] }
     | join( raw_reads )
     | map { row -> [row[1], row[2]] }
     | set { samples }
@@ -84,12 +86,9 @@ workflow {
     Cutadapt.out
     | branch {
         FindRef: it[0].reference_file == ''
-            it[0].reference = "${it[0].sample}_ref"
             return [it[0].reference, it[1]]
         RefProvided: it[0].reference_file != ''
-            def refFile = file(it[0].reference_file, checkIfExists: true)
-            it[0].reference = refFile.simpleName
-            return [it[0].reference, refFile]
+            return [it[0].reference, file(it[0].reference_file, checkIfExists: true)]
     }
     | set { ref_collect }
 
