@@ -13,6 +13,7 @@ process Viterbi{
 
 process Call{
     tag "$meta.sample"
+    label 'multiThread'
     publishDir 'vcfs', saveAs: { "${meta.sample}__${meta.reference}.vcf" }, mode: 'copy', enabled: "$call_indels"
 
     input:
@@ -24,6 +25,6 @@ process Call{
     script:
     def call_indels_opt = call_indels ? '--call-indels' : '' // If call indels is true the call indels option is set
     """
-    lofreq call -f $reference -o variants.vcf $bam $call_indels_opt
+    lofreq call-parallel --pp-threads $task.cpus -f $reference -o variants.vcf $bam $call_indels_opt
     """
 }

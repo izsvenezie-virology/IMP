@@ -1,5 +1,6 @@
 process BWAmem {
     tag "$meta.sample"
+    label 'multiThread'
     publishDir "alignments", saveAs: { "${meta.sample}__${meta.reference}.bam" }, mode: 'copy'
 
     input:

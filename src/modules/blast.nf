@@ -1,6 +1,7 @@
 process BlastN{
     tag "$meta"
-    
+    label 'multiThread'
+
     input:
         tuple val(meta), path(reads_fasta)
         path(db)
