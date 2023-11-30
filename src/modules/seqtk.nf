@@ -1,5 +1,5 @@
 process FastqToFasta {
-    tag "$meta.sample"
+    tag "$meta"
     
     input:
         tuple val(meta), path(reads)
