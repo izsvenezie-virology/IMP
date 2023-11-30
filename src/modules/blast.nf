@@ -1,5 +1,6 @@
 process BlastN{
-    cpus 6
+    tag "$meta"
+    
     input:
         tuple val(meta), path(reads_fasta)
         path(db)

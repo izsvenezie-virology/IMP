@@ -1,4 +1,5 @@
 process Cutadapt {
+    tag "$meta.sample"
     publishDir "clean_reads", saveAs: { "${meta.sample}_R1_clean.fastq.gz" }, mode: 'symlink', pattern: '*_R1_*'
     publishDir "clean_reads", saveAs: { "${meta.sample}_R2_clean.fastq.gz" }, mode: 'symlink', pattern: '*_R2_*'
 

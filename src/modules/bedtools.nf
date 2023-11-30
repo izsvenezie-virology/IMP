@@ -1,4 +1,5 @@
 process GenomeCov {
+    tag "$meta.sample"
     publishDir "coverage/raw", saveAs: { "${meta.sample}__${meta.reference}.tsv" }, mode: 'copy'
 
     input:

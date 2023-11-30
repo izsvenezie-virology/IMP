@@ -1,4 +1,5 @@
 process GetReference{
+    tag "$meta"
     publishDir "refs", saveAs: { "${meta}.fa" }, mode: 'copy'
 
     input:
@@ -13,6 +14,7 @@ process GetReference{
 }
 
 process ConcatFiles{
+    tag "$meta.sample"
     publishDir "results", saveAs: { "${name}.fa" }, mode: 'copy'
 
     input:

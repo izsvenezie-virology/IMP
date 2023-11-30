@@ -1,4 +1,6 @@
 process GetReferenceNames{
+    tag "$meta"
+    
     input:
         tuple val(meta), path(best_hits)
     output:

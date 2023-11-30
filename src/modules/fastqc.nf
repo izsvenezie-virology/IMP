@@ -1,4 +1,5 @@
 process FastQC {
+    tag "$meta.sample"
     cpus 2
 
     publishDir "reads_quality/$type", saveAs: { "${meta.sample}_R1_${type}.html" }, mode: 'copy', pattern: '*_R1_*'

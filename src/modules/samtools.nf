@@ -1,4 +1,6 @@
 process FaidxIndex{
+    tag "$meta"
+
     input:
         tuple val(meta), path(reference)
     output:
@@ -10,6 +12,8 @@ process FaidxIndex{
 }
 
 process Sort{
+    tag "$meta.sample"
+
     input:
         tuple val(meta), path(bam)
     output:
@@ -20,6 +24,7 @@ process Sort{
 }
 
 process BamIndex{
+    tag "$meta.sample"
     publishDir "alignments", saveAs: { "${meta.sample}__${meta.reference}.bai" }, mode: 'copy'
 
     input:

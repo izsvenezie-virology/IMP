@@ -1,4 +1,6 @@
 process DictIndex{
+    tag "$meta"
+
     input:
         tuple val(meta), path(reference)
     output:
@@ -10,6 +12,8 @@ process DictIndex{
 }
 
 process IndexFeatureFile{
+    tag "$meta.sample"
+
     input:
         tuple val(meta), path(feature_file)
     output:
@@ -21,6 +25,8 @@ process IndexFeatureFile{
 }
 
 process FixBam{
+    tag "$meta.sample"
+
     input:
         tuple val(meta), path(bam)
     output:
@@ -32,6 +38,8 @@ process FixBam{
 }
 
 process CleanBam{
+    tag "$meta.sample"
+
     input:
         tuple val(meta), path(bam)
     output:
@@ -43,6 +51,8 @@ process CleanBam{
 }
 
 process MarkDuplicates{
+    tag "$meta.sample"
+
     input:
         tuple val(meta), path(bam)
     output:
@@ -54,6 +64,8 @@ process MarkDuplicates{
 }
 
 process BaseRecalibrator{
+    tag "$meta.sample"
+
     input:
         tuple val(meta), path(bam), path(reference), path(ref_idx), path(dict_idx), path(known_sites), path(feature_idx)
     output:
@@ -65,6 +77,8 @@ process BaseRecalibrator{
 }
 
 process ApplyBQSR{
+    tag "$meta.sample"
+    
     input:
         tuple val(meta), path(bam), path(recalibration)
     output:

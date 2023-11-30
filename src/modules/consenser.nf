@@ -1,4 +1,6 @@
 process Consensus{
+    tag "$meta.sample"
+    
     input:
         tuple val(meta), path(vcf), path(reference), path(coverage)
         val(degenerated)

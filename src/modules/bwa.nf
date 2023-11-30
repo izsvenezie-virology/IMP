@@ -1,4 +1,5 @@
 process BWAmem {
+    tag "$meta.sample"
     publishDir "alignments", saveAs: { "${meta.sample}__${meta.reference}.bam" }, mode: 'copy'
 
     input:
@@ -13,6 +14,8 @@ process BWAmem {
 }
 
 process BWAIndex{
+    tag "$meta"
+    
     input:
         tuple val(meta), path(reference)
     output:

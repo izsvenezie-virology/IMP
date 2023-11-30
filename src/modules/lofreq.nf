@@ -1,4 +1,6 @@
 process Viterbi{
+    tag "$meta.sample"
+    
     input:
         tuple val(meta), path(bam), path(reference), path(reference_index)
     output:
@@ -10,6 +12,7 @@ process Viterbi{
 }
 
 process Call{
+    tag "$meta.sample"
     publishDir 'vcfs', saveAs: { "${meta.sample}__${meta.reference}.vcf" }, mode: 'copy', enabled: "$call_indels"
 
     input:
