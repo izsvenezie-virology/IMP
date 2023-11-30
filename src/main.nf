@@ -1,40 +1,33 @@
 #! /usr/bin/env nextflow
 
-include {
-    FastQC as FastQCRaw;
-    FastQC as FastQCClean;
-} from './modules/fastqc.nf'
-include {
-    Cutadapt;
-} from './modules/cutadapt.nf'
-include {
-    BWAmem;
-    BWAIndex;
-} from './modules/bwa.nf'
-include{
-    GenomeCov;
-} from './modules/bedtools.nf'
-include{
-    CoveragePlotter;
-} from './modules/coverplotter.nf'
-include{
-    FastqToFasta
-} from './modules/seqtk.nf'
-include{
-    BlastN
-} from './modules/blast.nf'
-include{
-    GetReferenceNames;
-} from './modules/python.nf'
 include{
     GetReference;
     ConcatFiles;
 } from './modules/bash.nf'
 include{
-    FaidxIndex;
-    Sort as MDSort;
-    BamIndex;
-} from './modules/samtools.nf'
+    GenomeCov;
+} from './modules/bedtools.nf'
+include{
+    BlastN
+} from './modules/blast.nf'
+include {
+    BWAmem;
+    BWAIndex;
+} from './modules/bwa.nf'
+include{
+    Consensus as ConsensusDegenerated;
+    Consensus as ConsensusNotDegenerated;
+} from './modules/consenser.nf'
+include{
+    CoveragePlotter;
+} from './modules/coverplotter.nf'
+include {
+    Cutadapt;
+} from './modules/cutadapt.nf'
+include {
+    FastQC as FastQCRaw;
+    FastQC as FastQCClean;
+} from './modules/fastqc.nf'
 include{
     DictIndex;
     FixBam;
@@ -50,9 +43,16 @@ include{
     Call as VariantCall;
 } from './modules/lofreq.nf'
 include{
-    Consensus as ConsensusDegenerated;
-    Consensus as ConsensusNotDegenerated;
-} from './modules/consenser.nf'
+    GetReferenceNames;
+} from './modules/python.nf'
+include{
+    FaidxIndex;
+    Sort as MDSort;
+    BamIndex;
+} from './modules/samtools.nf'
+include{
+    FastqToFasta
+} from './modules/seqtk.nf'
 
 workflow {
     // BLAST DB channels
