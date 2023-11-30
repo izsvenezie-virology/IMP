@@ -28,6 +28,7 @@ include{
 } from './modules/python.nf'
 include{
     GetReference;
+    ConcatFiles;
 } from './modules/bash.nf'
 include{
     FaidxIndex;
@@ -176,4 +177,10 @@ workflow {
     | set { vcf_reference_coverage } 
     ConsensusDegenerated( vcf_reference_coverage, true )
     ConsensusNotDegenerated( vcf_reference_coverage, false )
+
+    ConsensusDegenerated.out.segments
+    | collect 
+    | map { row -> [row[1].simpleName, row[1]] }
+    | groupTuple()
+    | ConcatFiles
 }
