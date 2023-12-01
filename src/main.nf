@@ -2,7 +2,6 @@
 
 include{
     GetReference;
-    ConcatFiles;
 } from './modules/bash.nf'
 include{
     GenomeCov;
@@ -184,8 +183,7 @@ workflow {
     ConsensusNotDegenerated( vcf_reference_coverage, false )
 
     ConsensusDegenerated.out.segments
-    | collect 
-    | map { row -> [row[1].simpleName, row[1]] }
-    | groupTuple()
-    | ConcatFiles
+    | map { row-> row[1] }
+    | flatten
+    | collectFile( storeDir: 'results' )
 }
