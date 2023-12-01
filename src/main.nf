@@ -48,7 +48,8 @@ include{
 include{
     FaidxIndex;
     Sort as MDSort;
-    BamIndex;
+    BamIndex as MDBamIndex;
+    BamIndex as BamIndex;
 } from './modules/samtools.nf'
 include{
     FastqToFasta
@@ -138,9 +139,13 @@ workflow {
 
     MarkDuplicates( MDSort.out )
 
+    MDBamIndex( MarkDuplicates.out )
+
     MarkDuplicates.out
-    | map { row -> [row[0].reference, row[0], row[1]] }
+    | combine( MDBamIndex.out, by: 0 )
+    | map { row -> [row[0].reference] + row }
     | combine( References, by: 0 )
+    | combine( FaidxIndex.out, by: 0 )
     | map { row -> row.tail() }
     | set { md_reference }
     FakeVariantCall(md_reference, false)
@@ -162,8 +167,9 @@ workflow {
     | ApplyBQSR
 
     ApplyBQSR.out
-    | map { row -> [row[0].reference, row[0], row[1]] }
+    | map { row -> [row[0].reference] + row }
     | combine( References, by: 0 )
+    | combine( FaidxIndex.out, by: 0 )
     | map { row -> row.tail() }
     | set { bqsr_reference }
     VariantCall( bqsr_reference, true )

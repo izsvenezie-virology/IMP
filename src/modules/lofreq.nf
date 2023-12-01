@@ -17,7 +17,7 @@ process Call{
     publishDir 'vcfs', saveAs: { "${meta.sample}__${meta.reference}.vcf" }, mode: 'copy', enabled: "$call_indels"
 
     input:
-        tuple val(meta), path(bam), path(reference)
+        tuple val(meta), path(bam), path(bam_index), path(reference), path(reference_index)
         val(call_indels)
     output:
         tuple val(meta), path("variants.vcf")
