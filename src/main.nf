@@ -112,7 +112,7 @@ workflow {
 
     // Reads alignment
     Cutadapt.out
-    | map { row -> [row[0].reference, row[0], row[1]] }
+    | map { row -> [row[0].reference] + row }
     | combine( References, by: 0)
     | combine( BWAIndex.out, by: 0 )
     | map { row -> row.tail() }
@@ -129,7 +129,7 @@ workflow {
     CleanBam( FixBam.out )
 
     CleanBam.out
-    | map { row -> [row[0].reference, row[0], row[1]] }
+    | map { row -> [row[0].reference] + row }
     | combine( References, by: 0)
     | combine( BWAIndex.out, by: 0 )
     | map { row -> row.tail() }
@@ -153,7 +153,7 @@ workflow {
     IndexFeatureFile(FakeVariantCall.out)
 
     MarkDuplicates.out
-    | map { row -> [row[0].reference, row[0], row[1]] }
+    | map { row -> [row[0].reference] + row }
     | combine( References, by: 0)
     | combine( FaidxIndex.out, by: 0 )
     | combine( DictIndex.out, by: 0)
@@ -175,7 +175,7 @@ workflow {
     VariantCall( bqsr_reference, true )
 
     VariantCall.out
-    | map { row -> [row[0].reference, row[0], row[1]] }
+    | map { row -> [row[0].reference] + row }
     | combine( References, by: 0 )
     | map { row -> row.tail() }
     | combine( GenomeCov.out, by: 0 )
