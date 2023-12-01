@@ -12,16 +12,3 @@ process GetReference{
     grep --no-group-separator -A 1 -f ${ref_names} ${db_fasta} | sed -E 's/^>.+\\|/>/g' >reference.fa
     """    
 }
-
-process ConcatFiles{
-    tag "$meta.sample"
-    publishDir "results", saveAs: { "${name}.fa" }, mode: 'copy'
-
-    input:
-        tuple val(name), path(files)
-    output:
-        tuple val(name), path("*")
-    """
-    cat $files >all.fa
-    """
-}
