@@ -1,8 +1,8 @@
 process Consensus{
     tag "$meta.sample"
 
-    publishDir "consensus", saveAs: { "${meta.sample}__${meta.reference}.fa" }, mode: 'copy', pattern: 'consensus.fasta'
-    publishDir "consensus/chroms", saveAs: { "${meta.sample}__${meta.reference}_${it}" }, mode: 'copy', pattern: '*.fa'
+    publishDir "${basePublishDir}", saveAs: { "${meta.sample}__${meta.reference}.fa" }, mode: 'copy', pattern: 'consensus.fasta'
+    publishDir "${basePublishDir}/chroms", saveAs: { "${meta.sample}__${meta.reference}_${it}" }, mode: 'copy', pattern: '*.fa'
     
     input:
         tuple val(meta), path(vcf), path(reference), path(coverage)
@@ -13,6 +13,7 @@ process Consensus{
 
     script:
     def degenerated_opt = degenerated ? '-d' : '' // If degenerated is true the degenerated consensus is produced
+    basePublishDir = degenerated ? 'consensus' : 'consensus_degenerated'
     """
     consenser --force $degenerated_opt -s CHROMNAME.fa -a ${meta.name}_CHROMNAME -o consensus.fasta -c $coverage $reference $vcf
     """
