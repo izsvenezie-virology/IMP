@@ -56,15 +56,15 @@ include{
 
 workflow {
     // BLAST DB channels
-    Channel.fromPath('ref_db/gisaid_epiflu_all_unique.fa.*')
+    Channel.fromPath(params.references_database)
     | toList
-    | set { ref_db }
-    Channel.fromPath('ref_db/gisaid_epiflu_all_unique.fa')
+    | set { references_db }
+    Channel.fromPath([params.references_database, "${params.references_database}.*"])
     | toList
-    | set { ref_fasta }
+    | set { references_db_blast }
 
     // Samples channels creation
-    Channel.fromFilePairs("raw_reads/*_R{1,2}*fastq.gz")
+    Channel.fromFilePairs("${params.raw_reads_folder}/*_R{1,2}*fastq.gz")
     | map { row -> [row[0].split("_S")[0], row[1]] }  
     | set { raw_reads }
 
@@ -94,9 +94,9 @@ workflow {
 
     // Find missing references
     FastqToFasta( ref_collect.FindRef )
-    BlastN( FastqToFasta.out, ref_db )
+    BlastN( FastqToFasta.out, references_db_blast )
     GetReferenceNames( BlastN.out )
-    GetReference( GetReferenceNames.out, ref_fasta )
+    GetReference( GetReferenceNames.out, references_db )
 
     // References channel creation
     GetReference.out
