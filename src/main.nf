@@ -100,6 +100,7 @@ workflow {
 
     // References channel creation
     GetReference.out
+    | filter { !it[1].isEmpty() }
     | mix ( ref_collect.RefProvided )
     | unique
     | set { References }
