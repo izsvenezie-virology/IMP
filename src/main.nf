@@ -72,7 +72,7 @@ workflow {
     | splitCsv( header:true, sep:'\t' )
     | map { row -> 
             reference = row.Reference ? file(row.Reference).simpleName : "${row.Sample}_ref"
-            [row.Sample, [sample:row.Sample, name:row.Name, reference:reference, reference_file:row.Reference]] }
+            [row.Sample, [sample:row.Sample, name:row.Name, reference:reference, reference_file:row.Reference, subset:row.Subset]] }
     | join( raw_reads )
     | map { row -> [row[1], row[2]] }
     | set { samples }
@@ -86,7 +86,7 @@ workflow {
     Cutadapt.out
     | branch {
         FindRef: it[0].reference_file == ''
-            return [it[0].reference, it[1]]
+            return [it[0].reference, it[0].subset ?: 1, it[1]]
         RefProvided: it[0].reference_file != ''
             return [it[0].reference, file(it[0].reference_file, checkIfExists: true)]
     }
