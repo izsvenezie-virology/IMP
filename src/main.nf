@@ -68,7 +68,7 @@ workflow {
     | map { row -> [row[0].split("_S")[0], row[1]] }  
     | set { raw_reads }
 
-    Channel.fromPath('samplesheet.csv')
+    Channel.fromPath(params.samples_metadata)
     | splitCsv( header:true, sep:'\t' )
     | map { row -> 
             reference = row.Reference ? file(row.Reference).simpleName : "${row.Sample}_ref"
