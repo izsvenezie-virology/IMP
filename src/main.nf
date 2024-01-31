@@ -15,8 +15,8 @@ include {
     BWAIndex;
 } from './modules/bwa.nf'
 include{
-    Consensus as ConsensusDegenerated;
-    Consensus as ConsensusNotDegenerated;
+    DegeneratedConsensus;
+    NonDegeneratedConsensus;
 } from './modules/consenser.nf'
 include{
     CoveragePlotter;
@@ -179,10 +179,10 @@ workflow {
     | map { row -> row.tail() }
     | combine( GenomeCov.out, by: 0 )
     | set { vcf_reference_coverage } 
-    ConsensusDegenerated( vcf_reference_coverage, true )
-    ConsensusNotDegenerated( vcf_reference_coverage, false )
+    DegeneratedConsensus( vcf_reference_coverage )
+    NonDegeneratedConsensus( vcf_reference_coverage )
 
-    ConsensusDegenerated.out.segments
+    DegeneratedConsensus.out.segments
     | map { row-> row[1] }
     | flatten
     | collectFile( storeDir: 'results' )
