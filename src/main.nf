@@ -8,6 +8,7 @@ include{
 } from './modules/bedtools.nf'
 include{
     BlastN
+    MakeBlastDb
 } from './modules/blast.nf'
 include {
     BWAmem;
@@ -55,13 +56,10 @@ include{
 } from './modules/seqtk.nf'
 
 workflow {
-    // BLAST DB channels
+    // BLAST DB channel
     Channel.fromPath(params.references_database)
-    | toList
+    | first
     | set { references_db }
-    Channel.fromPath([params.references_database, "${params.references_database}.*"])
-    | toList
-    | set { references_db_blast }
 
     // Samples channels creation
     Channel.fromFilePairs("${params.raw_reads_folder}/*_R{1,2}*fastq.gz")
@@ -93,8 +91,9 @@ workflow {
     | set { ref_collect }
 
     // Find missing references
+    MakeBlastDb(references_db, ref_collect.FindRef.first().ifEmpty(false))
     FastqToFasta( ref_collect.FindRef )
-    BlastN( FastqToFasta.out, references_db_blast )
+    BlastN( FastqToFasta.out, MakeBlastDb.out )
     GetReferenceNames( BlastN.out )
     GetReference( GetReferenceNames.out, references_db )
 
