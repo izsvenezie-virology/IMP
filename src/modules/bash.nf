@@ -2,6 +2,9 @@ process GetReference{
     tag "$meta"
     publishDir "refs", saveAs: { "${meta}.fa" }, mode: 'copy'
 
+    memory '500 MB'
+    time '30s'
+
     input:
         tuple val(meta), path(ref_names)
         path(db_fasta)

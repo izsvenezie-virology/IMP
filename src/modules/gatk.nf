@@ -1,18 +1,24 @@
 process DictIndex{
     tag "$meta"
 
+    memory '1 GB'
+    time '30s'
+
     input:
         tuple val(meta), path(reference)
     output:
         tuple val(meta), path('*')
 
     """
-    gatk CreateSequenceDictionary -R $reference
+    gatk --java-options "-XX:ConcGCThreads=1" CreateSequenceDictionary -R $reference
     """
 }
 
 process IndexFeatureFile{
     tag "$meta.sample"
+
+    memory '1 GB'
+    time '30s'
 
     input:
         tuple val(meta), path(feature_file)
@@ -20,38 +26,47 @@ process IndexFeatureFile{
         tuple val(meta), path('*')
 
     """
-    gatk IndexFeatureFile -I $feature_file
+    gatk --java-options "-XX:ConcGCThreads=1" IndexFeatureFile -I $feature_file
     """
 }
 
 process FixBam{
     tag "$meta.sample"
 
+    memory '20 GB'
+    time '5m'
+
     input:
         tuple val(meta), path(bam)
     output:
         tuple val(meta), path("*")
 
     """
-    gatk FixMateInformation -I ${bam} -O fixed.bam
+    gatk --java-options "-XX:ConcGCThreads=1" FixMateInformation -I ${bam} -O fixed.bam
     """
 }
 
 process CleanBam{
     tag "$meta.sample"
 
+    memory '5 GB'
+    time '5m'
+
     input:
         tuple val(meta), path(bam)
     output:
         tuple val(meta), path("*")
 
     """
-    gatk CleanSam -I ${bam} -O cleaned.bam
+    gatk --java-options "-XX:ConcGCThreads=1" CleanSam -I ${bam} -O cleaned.bam
     """
 }
 
 process MarkDuplicates{
     tag "$meta.sample"
+
+    memory '25 GB'
+    time '5m'
 
     input:
         tuple val(meta), path(bam)
@@ -59,12 +74,15 @@ process MarkDuplicates{
         tuple val(meta), path("*.bam")
 
     """
-    gatk MarkDuplicates -I ${bam} -O marked_duplicates.bam -M marked_duplicates.metrics
+    gatk --java-options "-XX:ConcGCThreads=1" MarkDuplicates -I ${bam} -O marked_duplicates.bam -M marked_duplicates.metrics
     """
 }
 
 process BaseRecalibrator{
     tag "$meta.sample"
+
+    memory '5 GB'
+    time '5m'
 
     input:
         tuple val(meta), path(bam), path(reference), path(ref_idx), path(dict_idx), path(known_sites), path(feature_idx)
@@ -72,19 +90,22 @@ process BaseRecalibrator{
         tuple val(meta), path("*")
 
     """
-    gatk BaseRecalibrator -R $reference -I $bam --known-sites $known_sites -O recalibration_report.txt
+    gatk --java-options "-XX:ConcGCThreads=1" BaseRecalibrator -R $reference -I $bam --known-sites $known_sites -O recalibration_report.txt
     """
 }
 
 process ApplyBQSR{
     tag "$meta.sample"
     
+    memory '1 GB'
+    time '5m'
+
     input:
         tuple val(meta), path(bam), path(recalibration)
     output:
         tuple val(meta), path("*.bam"), path("*.bai")
 
     """
-    gatk ApplyBQSR -I $bam -O bqsr.bam -bqsr $recalibration
+    gatk --java-options "-XX:ConcGCThreads=1" ApplyBQSR -I $bam -O bqsr.bam -bqsr $recalibration
     """
 }

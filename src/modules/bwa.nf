@@ -3,6 +3,9 @@ process BWAmem {
     label 'multiThread'
     publishDir "alignments", saveAs: { "${meta.sample}__${meta.reference}.bam" }, mode: 'copy'
 
+    memory '10 GB'
+    time '5m'
+
     input:
         tuple val(meta), path(reads), path(reference), path(index)
     output:
@@ -17,6 +20,9 @@ process BWAmem {
 process BWAIndex{
     tag "$meta"
     
+    memory '50 MB'
+    time '30s'
+
     input:
         tuple val(meta), path(reference)
     output:

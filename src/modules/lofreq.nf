@@ -1,6 +1,9 @@
 process Viterbi{
     tag "$meta.sample"
     
+    memory '500 MB'
+    time '5m'
+
     input:
         tuple val(meta), path(bam), path(reference), path(reference_index)
     output:
@@ -15,6 +18,9 @@ process Call{
     tag "$meta.sample"
     label 'multiThread'
     publishDir 'vcfs', saveAs: { "${meta.sample}__${meta.reference}.vcf" }, mode: 'copy', enabled: "$call_indels"
+
+    memory '5 GB'
+    time '15m'
 
     input:
         tuple val(meta), path(bam), path(bam_index), path(reference), path(reference_index)

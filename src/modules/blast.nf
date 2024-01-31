@@ -2,6 +2,9 @@ process BlastN{
     tag "$meta"
     label 'multiThread'
 
+    memory '10 GB'
+    time '48h'
+
     input:
         tuple val(meta), path(reads_fasta)
         tuple val(db_name), path(db)
@@ -18,6 +21,9 @@ process BlastN{
 
 process MakeBlastDb{
     tag "$references_fasta.baseName"
+
+    memory '1 GB'
+    time '5m'
 
     input:
         path(references_fasta)

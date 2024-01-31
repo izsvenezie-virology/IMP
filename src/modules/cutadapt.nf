@@ -4,6 +4,9 @@ process Cutadapt {
     publishDir "clean_reads", saveAs: { "${meta.sample}_R1_clean.fastq.gz" }, mode: 'symlink', pattern: '*_R1_*'
     publishDir "clean_reads", saveAs: { "${meta.sample}_R2_clean.fastq.gz" }, mode: 'symlink', pattern: '*_R2_*'
 
+    memory '4 GB'
+    time '1m'
+
     input:
         tuple val(meta), path(reads)
     output:

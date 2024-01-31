@@ -1,6 +1,9 @@
 process FaidxIndex{
     tag "$meta"
 
+    memory '500 MB'
+    time '30s'
+
     input:
         tuple val(meta), path(reference)
     output:
@@ -14,6 +17,9 @@ process FaidxIndex{
 process Sort{
     tag "$meta.sample"
 
+    memory '5 GB'
+    time '5m'
+
     input:
         tuple val(meta), path(bam)
     output:
@@ -26,6 +32,9 @@ process Sort{
 process BamIndex{
     tag "$meta.sample"
     publishDir "alignments", saveAs: { "${meta.sample}__${meta.reference}.bai" }, mode: 'copy'
+
+    memory '500 MB'
+    time '30s'
 
     input:
         tuple val(meta), path(bam)

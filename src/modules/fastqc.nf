@@ -1,9 +1,12 @@
 process FastQC {
     tag "$meta.sample"
-    cpus 2
 
     publishDir "reads_quality/$type", saveAs: { "${meta.sample}_R1_${type}.html" }, mode: 'copy', pattern: '*_R1_*'
     publishDir "reads_quality/$type", saveAs: { "${meta.sample}_R2_${type}.html" }, mode: 'copy', pattern: '*_R2_*'
+
+    cpus 2
+    memory '2 GB'
+    time '5m'
 
     input:
         tuple val(meta), path(reads)

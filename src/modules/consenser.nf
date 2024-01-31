@@ -1,6 +1,9 @@
 process DegeneratedConsensus{
     tag "$meta.sample"
 
+    memory '500 MB'
+    time '30s'
+
     publishDir "consensus", saveAs: { "${meta.sample}__${meta.reference}.fa" }, mode: 'copy', pattern: 'consensus.fasta'
     publishDir "consensus/chroms", saveAs: { "${meta.sample}__${meta.reference}_${it}" }, mode: 'copy', pattern: '*.fa'
     
@@ -21,6 +24,9 @@ process NonDegeneratedConsensus{
     publishDir "consensus_no_degenerations", saveAs: { "${meta.sample}__${meta.reference}.fa" }, mode: 'copy', pattern: 'consensus.fasta'
     publishDir "consensus_no_degenerations/chroms", saveAs: { "${meta.sample}__${meta.reference}_${it}" }, mode: 'copy', pattern: '*.fa'
     
+    memory '500 MB'
+    time '30s'
+
     input:
         tuple val(meta), path(vcf), path(reference), path(coverage)
     output:
