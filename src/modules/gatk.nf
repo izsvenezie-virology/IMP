@@ -97,7 +97,7 @@ process BaseRecalibrator{
 process ApplyBQSR{
     tag "$meta.sample"
     
-    memory '1 GB'
+    memory '5 GB'
     time '5m'
 
     input:
