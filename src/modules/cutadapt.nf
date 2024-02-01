@@ -12,7 +12,14 @@ process Cutadapt {
     output:
         tuple val(meta), path('*_clean.fastq.gz')
 
+    script:
+    def phred_threshold = meta.phred_threshold ?: 20
+    def min_len = meta.min_len ?: 80
     """
-    cutadapt --interleaved -j $task.cpus --action=trim --pair-filter=any -q 20 -m 80 -o reads_R1_clean.fastq.gz -p reads_R2_clean.fastq.gz $reads
+    cutadapt --interleaved -j $task.cpus \
+        --action=trim --pair-filter=any \
+        -q $phred_threshold -m $min_len \
+        -o reads_R1_clean.fastq.gz -p reads_R2_clean.fastq.gz \
+        $reads
     """
 }
