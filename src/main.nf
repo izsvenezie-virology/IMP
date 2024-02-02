@@ -43,6 +43,7 @@ include{
     Call as VariantCall;
 } from './modules/lofreq.nf'
 include{
+    CreateCutadaptPrimers;
     GetReferenceNames;
 } from './modules/python.nf'
 include{
@@ -71,10 +72,30 @@ workflow {
     | splitCsv( header:true, sep:'\t' )
     | map { row -> 
             reference = row.Reference ? file(row.Reference).simpleName : "${row.Sample}_ref"
-            [row.Sample, [sample:row.Sample, name:row.Name, reference:reference, reference_file:row.Reference, subset:row.Subset]] }
+            primers = row.Primers ? file(row.Primers).simpleName : file(params.null_file).simpleName
+            [row.Sample, [
+                sample:row.Sample,
+                name:row.Name,
+                primers:primers,
+                primers_file:row.Primers,
+                reference:reference,
+                reference_file:row.Reference,
+                subset:row.Subset
+            ]] }
     | join( raw_reads )
     | map { row -> [row[1], row[2]] }
     | set { samples }
+
+    samples
+    | map { row -> 
+        if (row[0].primers_file)
+            [row[0].primers, file(row[0].primers_file, checkIfExists: true)] 
+        else
+            [row[0].primers, file(params.null_file, checkIfExists: true)]}
+    | unique
+    | CreateCutadaptPrimers
+
+    CreateCutadaptPrimers.out.view()
 
     // Clean reads
     FastQCRaw( samples, 'raw' )
