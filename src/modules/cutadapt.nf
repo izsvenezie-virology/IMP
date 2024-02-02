@@ -9,6 +9,7 @@ process Cutadapt {
 
     input:
         tuple val(meta), path(reads)
+        path(adapters)
     output:
         tuple val(meta), path('*_clean.fastq.gz')
 
@@ -18,6 +19,7 @@ process Cutadapt {
     """
     cutadapt --interleaved -j $task.cpus \
         --action=trim --pair-filter=any \
+        -a file:$adapters -A file:$adapters \
         -q $phred_threshold -m $min_len \
         -o reads_R1_clean.fastq.gz -p reads_R2_clean.fastq.gz \
         $reads

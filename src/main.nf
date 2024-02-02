@@ -57,9 +57,10 @@ include{
 
 workflow {
     // BLAST DB channel
-    Channel.fromPath(params.references_database)
-    | first
-    | set { references_db }
+    references_db = file(params.references_database, checkIfExists: true)
+
+    // Adapters channel
+    adapters = file(params.adapters, checkIfExists: true)
 
     // Samples channels creation
     Channel.fromFilePairs("${params.raw_reads_folder}/*_R{1,2}*fastq.gz")
@@ -77,7 +78,7 @@ workflow {
 
     // Clean reads
     FastQCRaw( samples, 'raw' )
-    Cutadapt( samples )
+    Cutadapt( samples, adapters )
     FastQCClean( Cutadapt.out, 'clean' )
 
     // References collection channel creation
