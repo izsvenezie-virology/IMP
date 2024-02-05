@@ -95,11 +95,17 @@ workflow {
     | unique
     | CreateCutadaptPrimers
 
-    CreateCutadaptPrimers.out.view()
-
     // Clean reads
+    samples
+    | map { row -> [row[0].primers] + row }
+    | combine( CreateCutadaptPrimers.out, by: 0 )
+    | map { row -> row.tail() }
+    | set { to_cutadapt_ch }
+    Cutadapt( to_cutadapt_ch, adapters )
+
+    CreateCutadaptPrimers.out.view()
+    // Assess reads quality
     FastQCRaw( samples, 'raw' )
-    Cutadapt( samples, adapters )
     FastQCClean( Cutadapt.out, 'clean' )
 
     // References collection channel creation
