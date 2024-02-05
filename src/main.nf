@@ -65,45 +65,44 @@ workflow {
 
     // Samples channels creation
     Channel.fromFilePairs("${params.raw_reads_folder}/*_R{1,2}*fastq.gz")
-    | map { row -> [row[0].split("_S")[0], row[1]] }  
+    | map { [it[0].split("_S")[0], it[1]] }  
     | set { raw_reads }
 
     Channel.fromPath(params.samples_metadata)
     | splitCsv( header:true, sep:'\t' )
-    | map { row -> 
-            reference = row.Reference ? file(row.Reference).simpleName : "${row.Sample}_ref"
-            primers = row.Primers ? file(row.Primers).simpleName : file(params.null_file).simpleName
-            [row.Sample, [
-                sample:row.Sample,
-                name:row.Name,
+    | map { 
+            reference = it.Reference ? file(it.Reference).simpleName : "${it.Sample}_ref"
+            primers = it.Primers ? file(it.Primers).simpleName : file(params.null_file).simpleName
+            [it.Sample, [
+                sample:it.Sample,
+                name:it.Name,
                 primers:primers,
-                primers_file:row.Primers,
+                primers_file:it.Primers,
                 reference:reference,
-                reference_file:row.Reference,
-                subset:row.Subset
+                reference_file:it.Reference,
+                subset:it.Subset
             ]] }
     | join( raw_reads )
-    | map { row -> [row[1], row[2]] }
+    | map { [it[1], it[2]] }
     | set { samples }
 
     samples
-    | map { row -> 
-        if (row[0].primers_file)
-            [row[0].primers, file(row[0].primers_file, checkIfExists: true)] 
+    | map { 
+        if (it[0].primers_file)
+            [it[0].primers, file(it[0].primers_file, checkIfExists: true)] 
         else
-            [row[0].primers, file(params.null_file, checkIfExists: true)]}
+            [it[0].primers, file(params.null_file, checkIfExists: true)]}
     | unique
     | CreateCutadaptPrimers
 
     // Clean reads
     samples
-    | map { row -> [row[0].primers] + row }
+    | map { [it[0].primers] + it }
     | combine( CreateCutadaptPrimers.out, by: 0 )
-    | map { row -> row.tail() }
+    | map { it.tail() }
     | set { to_cutadapt_ch }
     Cutadapt( to_cutadapt_ch, adapters )
 
-    CreateCutadaptPrimers.out.view()
     // Assess reads quality
     FastQCRaw( samples, 'raw' )
     FastQCClean( Cutadapt.out, 'clean' )
@@ -139,10 +138,10 @@ workflow {
 
     // Reads alignment
     Cutadapt.out
-    | map { row -> [row[0].reference] + row }
+    | map { [it[0].reference] + it }
     | combine( References, by: 0)
     | combine( BWAIndex.out, by: 0 )
-    | map { row -> row.tail() }
+    | map { it.tail() }
     | BWAmem
 
     BamIndex(BWAmem.out)
@@ -156,10 +155,10 @@ workflow {
     CleanBam( FixBam.out )
 
     CleanBam.out
-    | map { row -> [row[0].reference] + row }
+    | map { [it[0].reference] + it }
     | combine( References, by: 0)
     | combine( BWAIndex.out, by: 0 )
-    | map { row -> row.tail() }
+    | map { it.tail() }
     | Viterbi
 
     MDSort(Viterbi.out)
@@ -170,21 +169,21 @@ workflow {
 
     MarkDuplicates.out
     | combine( MDBamIndex.out, by: 0 )
-    | map { row -> [row[0].reference] + row }
+    | map { [it[0].reference] + it }
     | combine( References, by: 0 )
     | combine( FaidxIndex.out, by: 0 )
-    | map { row -> row.tail() }
+    | map { it.tail() }
     | set { md_reference }
     FakeVariantCall(md_reference, false)
 
     IndexFeatureFile(FakeVariantCall.out)
 
     MarkDuplicates.out
-    | map { row -> [row[0].reference] + row }
+    | map { [it[0].reference] + it }
     | combine( References, by: 0)
     | combine( FaidxIndex.out, by: 0 )
     | combine( DictIndex.out, by: 0)
-    | map { row -> row.tail() }
+    | map { it.tail() }
     | combine( FakeVariantCall.out, by: 0 )
     | combine( IndexFeatureFile.out, by: 0 )
     | BaseRecalibrator
@@ -194,24 +193,24 @@ workflow {
     | ApplyBQSR
 
     ApplyBQSR.out
-    | map { row -> [row[0].reference] + row }
+    | map { [it[0].reference] + it }
     | combine( References, by: 0 )
     | combine( FaidxIndex.out, by: 0 )
-    | map { row -> row.tail() }
+    | map { it.tail() }
     | set { bqsr_reference }
     VariantCall( bqsr_reference, true )
 
     VariantCall.out
-    | map { row -> [row[0].reference] + row }
+    | map { [it[0].reference] + it }
     | combine( References, by: 0 )
-    | map { row -> row.tail() }
+    | map { it.tail() }
     | combine( GenomeCov.out, by: 0 )
     | set { vcf_reference_coverage } 
     DegeneratedConsensus( vcf_reference_coverage )
     NonDegeneratedConsensus( vcf_reference_coverage )
 
     DegeneratedConsensus.out.segments
-    | map { row-> row[1] }
+    | map { it[1] }
     | flatten
     | collectFile( storeDir: 'results' )
 }
