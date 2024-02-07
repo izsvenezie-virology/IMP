@@ -1,7 +1,6 @@
 process GetReferenceNames{
     tag "$meta"
 
-
     memory '500 MB'
     time '5m'
 
@@ -16,15 +15,15 @@ process GetReferenceNames{
 }
 
 process CreateCutadaptPrimers{
-    tag "$meta"
+    tag "$id"
 
     memory '500 MB'
     time '30s'
 
     input:
-        tuple val(meta), path(primers_tsv)
+        tuple val(id), path(primers_tsv)
     output:
-        tuple val(meta), path('*')
+        tuple val(id), path('*')
 
     """
     create_cutadapt_primers.py $primers_tsv
