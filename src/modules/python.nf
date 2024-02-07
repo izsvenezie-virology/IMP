@@ -1,13 +1,13 @@
 process GetReferenceNames{
-    tag "$meta"
+    tag "$id"
 
     memory '500 MB'
     time '5m'
 
     input:
-        tuple val(meta), path(best_hits)
+        tuple val(id), path(best_hits)
     output:
-        tuple val(meta), path('*')
+        tuple val(id), path('*')
 
     """
     extract_reference.py $best_hits >ref_names.txt

@@ -103,16 +103,17 @@ workflow {
     Cutadapt    ( to_cutadapt_ch, adapters )
 
     // Assess reads quality
-    FastQCRaw( raw_reads, 'raw' )
-    FastQCClean( Cutadapt.out, 'clean' )
+    FastQCRaw   ( raw_reads, 'raw' )
+    FastQCClean ( Cutadapt.out, 'clean' )
 
     // References collection channel creation
-    Cutadapt.out
+    metadata_ch
+    | combine ( Cutadapt.out, by: 0 )
     | branch {
-        FindRef: it[0].reference_file == ''
-            return [it[0].reference, it[0].subset ?: 1, it[1]]
-        RefProvided: it[0].reference_file != ''
-            return [it[0].reference, file(it[0].reference_file, checkIfExists: true)]
+        FindRef: it[1].reference_file == ''
+            return [it[1].reference, it[1].subset ?: 1, it[1]]
+        RefProvided: true
+            return [it[1].reference, file(it[1].reference_file, checkIfExists: true)]
     }
     | set { ref_collect }
 
