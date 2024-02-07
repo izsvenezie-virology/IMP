@@ -85,11 +85,6 @@ workflow {
     | set { metadata_ch }
 
     metadata_ch
-    | join( raw_reads )
-    | map { [it[1], it[2]] }
-    | set { samples }
-
-    metadata_ch
     | map { 
         if (it[1].primers_file)
             [it[1].primers, file(it[1].primers_file, checkIfExists: true)] 
@@ -108,7 +103,7 @@ workflow {
     Cutadapt    ( to_cutadapt_ch, adapters )
 
     // Assess reads quality
-    FastQCRaw( samples, 'raw' )
+    FastQCRaw( raw_reads, 'raw' )
     FastQCClean( Cutadapt.out, 'clean' )
 
     // References collection channel creation
