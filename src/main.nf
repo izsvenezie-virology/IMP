@@ -82,11 +82,14 @@ workflow {
                 reference_file:it.Reference,
                 subset:it.Subset
             ]] }
+    | set { metadata_ch }
+
+    metadata_ch
     | join( raw_reads )
     | map { [it[1], it[2]] }
     | set { samples }
 
-    samples
+    metadata_ch
     | map { 
         if (it[0].primers_file)
             [it[0].primers, file(it[0].primers_file, checkIfExists: true)] 
