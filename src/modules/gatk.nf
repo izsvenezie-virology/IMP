@@ -1,13 +1,13 @@
 process DictIndex{
-    tag "$meta"
+    tag "$id"
 
     memory '1 GB'
     time '30s'
 
     input:
-        tuple val(meta), path(reference)
+        tuple val(id), path(reference)
     output:
-        tuple val(meta), path('*')
+        tuple val(id), path('*')
 
     """
     gatk --java-options "-XX:ConcGCThreads=1" CreateSequenceDictionary -R $reference
@@ -15,15 +15,15 @@ process DictIndex{
 }
 
 process IndexFeatureFile{
-    tag "$meta.sample"
+    tag "$id.sample"
 
     memory '1 GB'
     time '30s'
 
     input:
-        tuple val(meta), path(feature_file)
+        tuple val(id), path(feature_file)
     output:
-        tuple val(meta), path('*')
+        tuple val(id), path('*')
 
     """
     gatk --java-options "-XX:ConcGCThreads=1" IndexFeatureFile -I $feature_file
@@ -31,15 +31,15 @@ process IndexFeatureFile{
 }
 
 process FixBam{
-    tag "$meta.sample"
+    tag "$id.sample"
 
     memory '20 GB'
     time '5m'
 
     input:
-        tuple val(meta), path(bam)
+        tuple val(id), path(bam)
     output:
-        tuple val(meta), path("*")
+        tuple val(id), path("*")
 
     """
     gatk --java-options "-XX:ConcGCThreads=1" FixMateInformation -I ${bam} -O fixed.bam
@@ -47,15 +47,15 @@ process FixBam{
 }
 
 process CleanBam{
-    tag "$meta.sample"
+    tag "$id.sample"
 
     memory '5 GB'
     time '5m'
 
     input:
-        tuple val(meta), path(bam)
+        tuple val(id), path(bam)
     output:
-        tuple val(meta), path("*")
+        tuple val(id), path("*")
 
     """
     gatk --java-options "-XX:ConcGCThreads=1" CleanSam -I ${bam} -O cleaned.bam
@@ -63,15 +63,15 @@ process CleanBam{
 }
 
 process MarkDuplicates{
-    tag "$meta.sample"
+    tag "$id.sample"
 
     memory '25 GB'
     time '5m'
 
     input:
-        tuple val(meta), path(bam)
+        tuple val(id), path(bam)
     output:
-        tuple val(meta), path("*.bam")
+        tuple val(id), path("*.bam")
 
     """
     gatk --java-options "-XX:ConcGCThreads=1" MarkDuplicates -I ${bam} -O marked_duplicates.bam -M marked_duplicates.metrics
@@ -79,15 +79,15 @@ process MarkDuplicates{
 }
 
 process BaseRecalibrator{
-    tag "$meta.sample"
+    tag "$id.sample"
 
     memory '5 GB'
     time '5m'
 
     input:
-        tuple val(meta), path(bam), path(reference), path(ref_idx), path(dict_idx), path(known_sites), path(feature_idx)
+        tuple val(id), path(bam), path(reference), path(ref_idx), path(dict_idx), path(known_sites), path(feature_idx)
     output:
-        tuple val(meta), path("*")
+        tuple val(id), path("*")
 
     """
     gatk --java-options "-XX:ConcGCThreads=1" BaseRecalibrator -R $reference -I $bam --known-sites $known_sites -O recalibration_report.txt
@@ -95,15 +95,15 @@ process BaseRecalibrator{
 }
 
 process ApplyBQSR{
-    tag "$meta.sample"
+    tag "$id.sample"
     
     memory '5 GB'
     time '5m'
 
     input:
-        tuple val(meta), path(bam), path(recalibration)
+        tuple val(id), path(bam), path(recalibration)
     output:
-        tuple val(meta), path("*.bam"), path("*.bai")
+        tuple val(id), path("*.bam"), path("*.bai")
 
     """
     gatk --java-options "-XX:ConcGCThreads=1" ApplyBQSR -I $bam -O bqsr.bam -bqsr $recalibration
