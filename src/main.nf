@@ -109,113 +109,113 @@ workflow {
 
     // References collection channel creation
     metadata_ch
-    | combine ( Cutadapt.out, by: 0 )
-    | branch {
-        FindRef: it[1].reference_file == ''
-            return [it[1].reference, it[1].subset ?: 1, it[1]]
-        RefProvided: true
-            return [it[1].reference, file(it[1].reference_file, checkIfExists: true)]
+    | combine   ( Cutadapt.out, by: 0 )
+    | branch    {
+                  FindRef: it[1].reference_file == ''
+                      return [it[1].reference, it[1].subset ?: 1, it[1]]
+                  RefProvided: true
+                      return [it[1].reference, file(it[1].reference_file, checkIfExists: true)]
     }
-    | set { ref_collect }
+    | set       { ref_collect }
 
     // Find missing references
-    MakeBlastDb(references_db, ref_collect.FindRef.first().ifEmpty(false))
+    MakeBlastDb (references_db, ref_collect.FindRef.first().ifEmpty(false))
     FastqToFasta( ref_collect.FindRef )
-    BlastN( FastqToFasta.out, MakeBlastDb.out )
+    BlastN      ( FastqToFasta.out, MakeBlastDb.out )
     GetReferenceNames( BlastN.out )
     GetReference( GetReferenceNames.out, references_db )
 
     // References channel creation
     GetReference.out
-    | filter { !it[1].isEmpty() }
-    | mix ( ref_collect.RefProvided )
+    | filter    { !it[1].isEmpty() }
+    | mix       ( ref_collect.RefProvided )
     | unique
-    | set { References }
+    | set       { References }
 
     // Reference index processes
-    BWAIndex( References )
-    FaidxIndex( References )
-    DictIndex( References )
+    BWAIndex    ( References )
+    FaidxIndex  ( References )
+    DictIndex   ( References )
 
     // Reads alignment
     metadata_ch
-    | map { [ it[1].sample, it[1].reference, it[1].id]}
-    | combine (Cutadapt.out, by: 0)
-    | map { it.tail() }
-    | combine( References, by: 0)
-    | combine( BWAIndex.out, by: 0 )
-    | map { it.tail() }
+    | map       { [ it[1].sample, it[1].reference, it[1].id]}
+    | combine   (Cutadapt.out, by: 0)
+    | map       { it.tail() }
+    | combine   ( References, by: 0)
+    | combine   ( BWAIndex.out, by: 0 )
+    | map       { it.tail() }
     | BWAmem
 
-    BamIndex(BWAmem.out)
+    BamIndex    (BWAmem.out)
 
-    GenomeCov( BWAmem.out )
+    GenomeCov   ( BWAmem.out )
     | CoveragePlotter
 
     // GATK best practices
-    FixBam( BWAmem.out )
+    FixBam      ( BWAmem.out )
 
-    CleanBam( FixBam.out )
+    CleanBam    ( FixBam.out )
 
     CleanBam.out
-    | map { [it[0].reference] + it }
-    | combine( References, by: 0)
-    | combine( BWAIndex.out, by: 0 )
-    | map { it.tail() }
+    | map       { [it[0].reference] + it }
+    | combine   ( References, by: 0)
+    | combine   ( BWAIndex.out, by: 0 )
+    | map       { it.tail() }
     | Viterbi
 
-    MDSort(Viterbi.out)
+    MDSort      (Viterbi.out)
 
     MarkDuplicates( MDSort.out )
 
-    MDBamIndex( MarkDuplicates.out )
+    MDBamIndex  ( MarkDuplicates.out )
 
     MarkDuplicates.out
-    | combine( MDBamIndex.out, by: 0 )
-    | map { [it[0].reference] + it }
-    | combine( References, by: 0 )
-    | combine( FaidxIndex.out, by: 0 )
-    | map { it.tail() }
-    | set { md_reference }
+    | combine   ( MDBamIndex.out, by: 0 )
+    | map       { [it[0].reference] + it }
+    | combine   ( References, by: 0 )
+    | combine   ( FaidxIndex.out, by: 0 )
+    | map       { it.tail() }
+    | set       { md_reference }
     FakeVariantCall(md_reference, false)
 
     IndexFeatureFile(FakeVariantCall.out)
 
     MarkDuplicates.out
-    | map { [it[0].reference] + it }
-    | combine( References, by: 0)
-    | combine( FaidxIndex.out, by: 0 )
-    | combine( DictIndex.out, by: 0)
-    | map { it.tail() }
-    | combine( FakeVariantCall.out, by: 0 )
-    | combine( IndexFeatureFile.out, by: 0 )
+    | map       { [it[0].reference] + it }
+    | combine   ( References, by: 0)
+    | combine   ( FaidxIndex.out, by: 0 )
+    | combine   ( DictIndex.out, by: 0)
+    | map       { it.tail() }
+    | combine   ( FakeVariantCall.out, by: 0 )
+    | combine   ( IndexFeatureFile.out, by: 0 )
     | BaseRecalibrator
 
     MarkDuplicates.out
-    | combine( BaseRecalibrator.out, by: 0 )
+    | combine   ( BaseRecalibrator.out, by: 0 )
     | ApplyBQSR
 
     ApplyBQSR.out
-    | map { [it[0].reference] + it }
-    | combine( References, by: 0 )
-    | combine( FaidxIndex.out, by: 0 )
-    | map { it.tail() }
-    | set { bqsr_reference }
-    VariantCall( bqsr_reference, true )
+    | map       { [it[0].reference] + it }
+    | combine   ( References, by: 0 )
+    | combine   ( FaidxIndex.out, by: 0 )
+    | map       { it.tail() }
+    | set       { bqsr_reference }
+    VariantCall ( bqsr_reference, true )
 
     metadata_ch
-    | map { [it[1].id, it[1].reference, it[1].id, [name: it[1].name]] }
-    | combine (VariantCall.out, by: 0)
-    | combine ( GenomeCov.out, by: 0 )
-    | map { it.tail() }
-    | combine ( References, by: 0 )
-    | map { it.tail() }
-    | set { vcf_coverage_reference } 
+    | map       { [it[1].id, it[1].reference, it[1].id, [name: it[1].name]] }
+    | combine   (VariantCall.out, by: 0)
+    | combine   ( GenomeCov.out, by: 0 )
+    | map       { it.tail() }
+    | combine   ( References, by: 0 )
+    | map       { it.tail() }
+    | set       { vcf_coverage_reference } 
     DegeneratedConsensus( vcf_coverage_reference )
     NonDegeneratedConsensus( vcf_coverage_reference )
 
     DegeneratedConsensus.out.segments
-    | map { it[1] }
+    | map       { it[1] }
     | flatten
     | collectFile( storeDir: 'results' )
 }
