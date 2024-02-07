@@ -91,20 +91,21 @@ workflow {
 
     metadata_ch
     | map { 
-        if (it[0].primers_file)
-            [it[0].primers, file(it[0].primers_file, checkIfExists: true)] 
+        if (it[1].primers_file)
+            [it[1].primers, file(it[1].primers_file, checkIfExists: true)] 
         else
-            [it[0].primers, file(params.null_file, checkIfExists: true)]}
+            [it[1].primers, file(params.null_file, checkIfExists: true)]}
     | unique
     | CreateCutadaptPrimers
 
     // Clean reads
-    samples
-    | map { [it[0].primers] + it }
-    | combine( CreateCutadaptPrimers.out, by: 0 )
-    | map { it.tail() }
-    | set { to_cutadapt_ch }
-    Cutadapt( to_cutadapt_ch, adapters )
+    raw_reads
+    | join      ( metadata_ch )
+    | map       { [it[2].primers, it[2].sample, [it[2].minQual, it[2].minLen], it[1]] }
+    | combine   ( CreateCutadaptPrimers.out, by: 0 )
+    | map       { it.tail() }
+    | set       { to_cutadapt_ch }
+    Cutadapt    ( to_cutadapt_ch, adapters )
 
     // Assess reads quality
     FastQCRaw( samples, 'raw' )
