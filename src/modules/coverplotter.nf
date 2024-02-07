@@ -1,16 +1,16 @@
 process CoveragePlotter {
-    tag "$meta.sample"
+    tag "$id.sample"
     errorStrategy 'ignore'
     
-    publishDir "coverage", saveAs: { "${meta.sample}__${meta.reference}.pdf" }, mode: 'copy'
+    publishDir "coverage", saveAs: { "${id.sample}__${id.reference}.pdf" }, mode: 'copy'
 
     memory '1 GB'
     time '30s'
 
     input:
-        tuple val(meta), path(coverage)
+        tuple val(id), path(coverage)
     output:
-        tuple val(meta), path('*')
+        tuple val(id), path('*')
     
     """
     coverplotter -o coverage.pdf $coverage

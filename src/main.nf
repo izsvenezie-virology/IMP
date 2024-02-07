@@ -203,14 +203,16 @@ workflow {
     | set { bqsr_reference }
     VariantCall( bqsr_reference, true )
 
-    VariantCall.out
-    | map { [it[0].reference] + it }
-    | combine( References, by: 0 )
+    metadata_ch
+    | map { [it[1].id, it[1].reference, it[1].id, [name: it[1].name]] }
+    | combine (VariantCall.out, by: 0)
+    | combine ( GenomeCov.out, by: 0 )
     | map { it.tail() }
-    | combine( GenomeCov.out, by: 0 )
-    | set { vcf_reference_coverage } 
-    DegeneratedConsensus( vcf_reference_coverage )
-    NonDegeneratedConsensus( vcf_reference_coverage )
+    | combine ( References, by: 0 )
+    | map { it.tail() }
+    | set { vcf_coverage_reference } 
+    DegeneratedConsensus( vcf_coverage_reference )
+    NonDegeneratedConsensus( vcf_coverage_reference )
 
     DegeneratedConsensus.out.segments
     | map { it[1] }
