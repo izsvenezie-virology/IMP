@@ -1,15 +1,15 @@
 process BlastN{
-    tag "$meta"
+    tag "$id"
     label 'multiThread'
 
     memory '10 GB'
     time '48h'
 
     input:
-        tuple val(meta), path(reads_fasta)
+        tuple val(id), path(reads_fasta)
         tuple val(db_name), path(db)
     output:
-        tuple val(meta), path('*')
+        tuple val(id), path('*')
     
     """
     blastn -db ${db_name} -query $reads_fasta \

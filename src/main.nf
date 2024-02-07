@@ -74,6 +74,7 @@ workflow {
             reference = it.Reference ? file(it.Reference).simpleName : "${it.Sample}_ref"
             primers = it.Primers ? file(it.Primers).simpleName : file(params.null_file).simpleName
             [it.Sample, [
+                id:[sample: it.Sample, reference: reference],
                 sample:it.Sample,
                 name:it.Name,
                 primers:primers,
@@ -82,38 +83,38 @@ workflow {
                 reference_file:it.Reference,
                 subset:it.Subset
             ]] }
-    | join( raw_reads )
-    | map { [it[1], it[2]] }
-    | set { samples }
+    | set { metadata_ch }
 
-    samples
+    metadata_ch
     | map { 
-        if (it[0].primers_file)
-            [it[0].primers, file(it[0].primers_file, checkIfExists: true)] 
+        if (it[1].primers_file)
+            [it[1].primers, file(it[1].primers_file, checkIfExists: true)] 
         else
-            [it[0].primers, file(params.null_file, checkIfExists: true)]}
+            [it[1].primers, file(params.null_file, checkIfExists: true)]}
     | unique
     | CreateCutadaptPrimers
 
     // Clean reads
-    samples
-    | map { [it[0].primers] + it }
-    | combine( CreateCutadaptPrimers.out, by: 0 )
-    | map { it.tail() }
-    | set { to_cutadapt_ch }
-    Cutadapt( to_cutadapt_ch, adapters )
+    raw_reads
+    | join      ( metadata_ch )
+    | map       { [it[2].primers, it[2].sample, [it[2].minQual, it[2].minLen], it[1]] }
+    | combine   ( CreateCutadaptPrimers.out, by: 0 )
+    | map       { it.tail() }
+    | set       { to_cutadapt_ch }
+    Cutadapt    ( to_cutadapt_ch, adapters )
 
     // Assess reads quality
-    FastQCRaw( samples, 'raw' )
-    FastQCClean( Cutadapt.out, 'clean' )
+    FastQCRaw   ( raw_reads, 'raw' )
+    FastQCClean ( Cutadapt.out, 'clean' )
 
     // References collection channel creation
-    Cutadapt.out
+    metadata_ch
+    | combine ( Cutadapt.out, by: 0 )
     | branch {
-        FindRef: it[0].reference_file == ''
-            return [it[0].reference, it[0].subset ?: 1, it[1]]
-        RefProvided: it[0].reference_file != ''
-            return [it[0].reference, file(it[0].reference_file, checkIfExists: true)]
+        FindRef: it[1].reference_file == ''
+            return [it[1].reference, it[1].subset ?: 1, it[1]]
+        RefProvided: true
+            return [it[1].reference, file(it[1].reference_file, checkIfExists: true)]
     }
     | set { ref_collect }
 
@@ -137,8 +138,10 @@ workflow {
     DictIndex( References )
 
     // Reads alignment
-    Cutadapt.out
-    | map { [it[0].reference] + it }
+    metadata_ch
+    | map { [ it[1].sample, it[1].reference, it[1].id]}
+    | combine (Cutadapt.out, by: 0)
+    | map { it.tail() }
     | combine( References, by: 0)
     | combine( BWAIndex.out, by: 0 )
     | map { it.tail() }
@@ -200,14 +203,16 @@ workflow {
     | set { bqsr_reference }
     VariantCall( bqsr_reference, true )
 
-    VariantCall.out
-    | map { [it[0].reference] + it }
-    | combine( References, by: 0 )
+    metadata_ch
+    | map { [it[1].id, it[1].reference, it[1].id, [name: it[1].name]] }
+    | combine (VariantCall.out, by: 0)
+    | combine ( GenomeCov.out, by: 0 )
     | map { it.tail() }
-    | combine( GenomeCov.out, by: 0 )
-    | set { vcf_reference_coverage } 
-    DegeneratedConsensus( vcf_reference_coverage )
-    NonDegeneratedConsensus( vcf_reference_coverage )
+    | combine ( References, by: 0 )
+    | map { it.tail() }
+    | set { vcf_coverage_reference } 
+    DegeneratedConsensus( vcf_coverage_reference )
+    NonDegeneratedConsensus( vcf_coverage_reference )
 
     DegeneratedConsensus.out.segments
     | map { it[1] }

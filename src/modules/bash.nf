@@ -1,15 +1,15 @@
 process GetReference{
-    tag "$meta"
-    publishDir "refs", saveAs: { "${meta}.fa" }, mode: 'copy'
+    tag "$id"
+    publishDir "refs", saveAs: { "${id}.fa" }, mode: 'copy'
 
     memory '500 MB'
     time '30s'
 
     input:
-        tuple val(meta), path(ref_names)
+        tuple val(id), path(ref_names)
         path(db_fasta)
     output:
-        tuple val(meta), path('*')
+        tuple val(id), path('*')
 
     """
     grep --no-group-separator -A 1 -f ${ref_names} ${db_fasta} | sed -E 's/^>.+\\|/>/g' >reference.fa

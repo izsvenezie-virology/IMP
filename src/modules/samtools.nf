@@ -1,13 +1,13 @@
 process FaidxIndex{
-    tag "$meta"
+    tag "$id"
 
     memory '500 MB'
     time '30s'
 
     input:
-        tuple val(meta), path(reference)
+        tuple val(id), path(reference)
     output:
-        tuple val(meta), path('*')
+        tuple val(id), path('*')
 
     """
     samtools faidx $reference
@@ -15,31 +15,31 @@ process FaidxIndex{
 }
 
 process Sort{
-    tag "$meta.sample"
+    tag "$id.sample"
 
     memory '5 GB'
     time '5m'
 
     input:
-        tuple val(meta), path(bam)
+        tuple val(id), path(bam)
     output:
-        tuple val(meta), path('*')
+        tuple val(id), path('*')
     """
     samtools sort -O bam -o sorted.bam $bam
     """
 }
 
 process BamIndex{
-    tag "$meta.sample"
-    publishDir "alignments", saveAs: { "${meta.sample}__${meta.reference}.bai" }, mode: 'copy'
+    tag "$id.sample"
+    publishDir "alignments", saveAs: { "${id.sample}__${id.reference}.bai" }, mode: 'copy'
 
     memory '500 MB'
     time '30s'
 
     input:
-        tuple val(meta), path(bam)
+        tuple val(id), path(bam)
     output:
-        tuple val(meta), path('*')
+        tuple val(id), path('*')
     """
     samtools index $bam
     """

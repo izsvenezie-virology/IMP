@@ -1,13 +1,13 @@
 process Viterbi{
-    tag "$meta.sample"
+    tag "$id.sample"
     
     memory '500 MB'
     time '5m'
 
     input:
-        tuple val(meta), path(bam), path(reference), path(reference_index)
+        tuple val(id), path(bam), path(reference), path(reference_index)
     output:
-        tuple val(meta), path("viterbi.bam")
+        tuple val(id), path("viterbi.bam")
     
     """
     lofreq viterbi -f $reference -o viterbi.bam $bam 
@@ -15,18 +15,18 @@ process Viterbi{
 }
 
 process Call{
-    tag "$meta.sample"
+    tag "$id.sample"
     label 'multiThread'
-    publishDir 'vcfs', saveAs: { "${meta.sample}__${meta.reference}.vcf" }, mode: 'copy', enabled: "$call_indels"
+    publishDir 'vcfs', saveAs: { "${id.sample}__${id.reference}.vcf" }, mode: 'copy', enabled: "$call_indels"
 
     memory '5 GB'
     time '15m'
 
     input:
-        tuple val(meta), path(bam), path(bam_index), path(reference), path(reference_index)
+        tuple val(id), path(bam), path(bam_index), path(reference), path(reference_index)
         val(call_indels)
     output:
-        tuple val(meta), path("variants.vcf")
+        tuple val(id), path("variants.vcf")
 
     script:
     def call_indels_opt = call_indels ? '--call-indels' : '' // If call indels is true the call indels option is set
