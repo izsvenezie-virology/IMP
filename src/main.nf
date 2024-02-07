@@ -74,6 +74,7 @@ workflow {
             reference = it.Reference ? file(it.Reference).simpleName : "${it.Sample}_ref"
             primers = it.Primers ? file(it.Primers).simpleName : file(params.null_file).simpleName
             [it.Sample, [
+                id:[sample: it[1].sample, reference: it[1].reference],
                 sample:it.Sample,
                 name:it.Name,
                 primers:primers,
@@ -137,8 +138,10 @@ workflow {
     DictIndex( References )
 
     // Reads alignment
-    Cutadapt.out
-    | map { [it[0].reference] + it }
+    metadata_ch
+    | map { [ it[1].sample, it[1].reference, it[1].id]}
+    | combine (Cutadapt.out, by: 0)
+    | map { it.tail() }
     | combine( References, by: 0)
     | combine( BWAIndex.out, by: 0 )
     | map { it.tail() }

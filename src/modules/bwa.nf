@@ -1,32 +1,32 @@
 process BWAmem {
-    tag "$meta.sample"
+    tag "$id.sample"
     label 'multiThread'
-    publishDir "alignments", saveAs: { "${meta.sample}__${meta.reference}.bam" }, mode: 'copy'
+    publishDir "alignments", saveAs: { "${id.sample}__${id.reference}.bam" }, mode: 'copy'
 
     memory '10 GB'
     time '5m'
 
     input:
-        tuple val(meta), path(reads), path(reference), path(index)
+        tuple val(id), path(reads), path(reference), path(index)
     output:
-        tuple val(meta), path('*')
+        tuple val(id), path('*')
     
     """
-    bwa mem -t $task.cpus -R '@RG\\tID:${meta.sample}\\tSM:${meta.sample}\\tPL:ILLUMINA' -M $reference $reads |
+    bwa mem -t $task.cpus -R '@RG\\tID:${id.sample}\\tSM:${id.sample}\\tPL:ILLUMINA' -M $reference $reads |
         samtools sort -@ $task.cpus -O bam -o sorted.bam
     """
 }
 
 process BWAIndex{
-    tag "$meta"
+    tag "$id"
     
     memory '50 MB'
     time '30s'
 
     input:
-        tuple val(meta), path(reference)
+        tuple val(id), path(reference)
     output:
-        tuple val(meta), path('*')
+        tuple val(id), path('*')
     
     """
     bwa index $reference
