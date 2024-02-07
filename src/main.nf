@@ -74,7 +74,7 @@ workflow {
             reference = it.Reference ? file(it.Reference).simpleName : "${it.Sample}_ref"
             primers = it.Primers ? file(it.Primers).simpleName : file(params.null_file).simpleName
             [it.Sample, [
-                id:[sample: it[1].sample, reference: it[1].reference],
+                id:[sample: it.Sample, reference: reference],
                 sample:it.Sample,
                 name:it.Name,
                 primers:primers,
