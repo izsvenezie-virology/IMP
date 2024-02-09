@@ -117,7 +117,7 @@ workflow {
     | combine   ( Cutadapt.out, by: 0 )
     | branch    {
                   FindRef: it[1].reference_file == ''
-                      return [it[1].reference, it[1].subset ?: 1, it[1]]
+                      return [it[1].reference, it[1].subset ?: 1, it[2]]
                   RefProvided: true
                       return [it[1].reference, file(it[1].reference_file, checkIfExists: true)]
     }
