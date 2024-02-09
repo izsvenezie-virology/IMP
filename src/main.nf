@@ -65,12 +65,12 @@ workflow {
 
     // Samples channels creation
     Channel.fromFilePairs("${params.raw_reads_folder}/*_R{1,2}*fastq.gz")
-    | map { [it[0].split("_S")[0], it[1]] }  
+    | map { [it[0].split("_S")[0], it[1]] }
     | set { raw_reads }
 
     Channel.fromPath(params.samples_metadata)
     | splitCsv( header:true, sep:'\t' )
-    | map { 
+    | map {
             reference = it.Reference ? file(it.Reference).simpleName : "${it.Sample}_ref"
             primers = it.Primers ? file(it.Primers).simpleName : file(params.null_file).simpleName
             [it.Sample, [
@@ -86,9 +86,9 @@ workflow {
     | set { metadata_ch }
 
     metadata_ch
-    | map { 
+    | map {
         if (it[1].primers_file)
-            [it[1].primers, file(it[1].primers_file, checkIfExists: true)] 
+            [it[1].primers, file(it[1].primers_file, checkIfExists: true)]
         else
             [it[1].primers, file(params.null_file, checkIfExists: true)]}
     | unique
@@ -203,19 +203,21 @@ workflow {
     | set       { bqsr_reference }
     VariantCall ( bqsr_reference, true )
 
+    // Create consensuses
     metadata_ch
-    | map       { [it[1].id, it[1].reference, it[1].id, [name: it[1].name]] }
-    | combine   (VariantCall.out, by: 0)
-    | combine   ( GenomeCov.out, by: 0 )
-    | map       { it.tail() }
-    | combine   ( References, by: 0 )
-    | map       { it.tail() }
-    | set       { vcf_coverage_reference } 
+    | map       { [it[1].id, it[1].reference, it[1].id, [name: it[1].name]] }       // .id and .reference for channel merge, .id and .name are parameters
+    | combine   ( VariantCall.out, by: 0 )                                          // combine vcf file
+    | combine   ( GenomeCov.out, by: 0 )                                            // combine coverage file
+    | map       { it.tail() }                                                       // remove .id
+    | combine   ( References, by: 0 )                                               // combine reference file
+    | map       { it.tail() }                                                       // remove .reference
+    | set       { vcf_coverage_reference }                                          // set channel
     DegeneratedConsensus( vcf_coverage_reference )
     NonDegeneratedConsensus( vcf_coverage_reference )
 
+    // Creates files with all sequences splitted by segment
     DegeneratedConsensus.out.segments
-    | map       { it[1] }
-    | flatten
-    | collectFile( storeDir: 'results' )
+    | map       { it[1] }                                                           // Get only files
+    | flatten                                                                       // Transform to list
+    | collectFile( storeDir: 'results' )                                            // Merge content of files by name
 }
