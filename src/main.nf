@@ -104,7 +104,12 @@ workflow {
     Cutadapt    ( to_cutadapt_ch, adapters )
 
     // Assess reads quality
-    FastQCRaw   ( raw_reads, 'raw' )
+    raw_reads
+    | join      ( metadata_ch )
+    | map       { [it[0], it[1]] }
+    | set       { to_fastqcraw_ch }
+    to_fastqcraw_ch.view()
+    FastQCRaw   ( to_fastqcraw_ch, 'raw' )
     FastQCClean ( Cutadapt.out, 'clean' )
 
     // References collection channel creation
