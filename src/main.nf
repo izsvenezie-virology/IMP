@@ -105,10 +105,10 @@ workflow {
 
     // Assess reads quality
     raw_reads
-    | join      ( metadata_ch )
-    | map       { [it[0], it[1]] }
-    | set       { to_fastqcraw_ch }
-    to_fastqcraw_ch.view()
+    | join      ( metadata_ch )                                                     // join metadata to keep only samples to analyze
+    | map       { [it[0], it[1]] }                                                  // keep only ID and raw reads files
+    | set       { to_fastqcraw_ch }                                                 // set channel
+
     FastQCRaw   ( to_fastqcraw_ch, 'raw' )
     FastQCClean ( Cutadapt.out, 'clean' )
 
@@ -124,7 +124,7 @@ workflow {
     | set       { ref_collect }
 
     // Find missing references
-    MakeBlastDb (references_db, ref_collect.FindRef.first().ifEmpty(false))
+    MakeBlastDb (references_db, ref_collect.FindRef.first().ifEmpty(false))         // create blastDB only if at least one reference must be found
     FastqToFasta( ref_collect.FindRef )
     BlastN      ( FastqToFasta.out, MakeBlastDb.out )
     GetReferenceNames( BlastN.out )
@@ -132,10 +132,10 @@ workflow {
 
     // References channel creation
     GetReference.out
-    | filter    { !it[1].isEmpty() }
-    | mix       ( ref_collect.RefProvided )
-    | unique
-    | set       { References }
+    | filter    { !it[1].isEmpty() }                                                // remove empty references: in this case the sample using this reference is not processed
+    | mix       ( ref_collect.RefProvided )                                         // merge provided references and found refereces
+    | unique                                                                        // keeps only one copy for each reference
+    | set       { References }                                                      // set channel
 
     // Reference index processes
     BWAIndex    ( References )
@@ -144,12 +144,12 @@ workflow {
 
     // Reads alignment
     metadata_ch
-    | map       { [ it[1].sample, it[1].reference, it[1].id]}
-    | combine   (Cutadapt.out, by: 0)
-    | map       { it.tail() }
-    | combine   ( References, by: 0)
-    | combine   ( BWAIndex.out, by: 0 )
-    | map       { it.tail() }
+    | map       { [ it[1].sample, it[1].reference, it[1].id]}                       // .sample and .reference for channel merge, id is a parameter
+    | combine   (Cutadapt.out, by: 0)                                               // combine cleaned reads
+    | map       { it.tail() }                                                       // remove .sample
+    | combine   ( References, by: 0)                                                // combine reference
+    | combine   ( BWAIndex.out, by: 0 )                                             // combine reference index
+    | map       { it.tail() }                                                       // remove .reference
     | BWAmem
 
     BamIndex    (BWAmem.out)
@@ -163,10 +163,10 @@ workflow {
     CleanBam    ( FixBam.out )
 
     CleanBam.out
-    | map       { [it[0].reference] + it }
-    | combine   ( References, by: 0)
-    | combine   ( BWAIndex.out, by: 0 )
-    | map       { it.tail() }
+    | map       { [it[0].reference] + it }                                          // .refrence for channel merge
+    | combine   ( References, by: 0)                                                // combine reference
+    | combine   ( BWAIndex.out, by: 0 )                                             // combine reference index
+    | map       { it.tail() }                                                       // remover .refrence
     | Viterbi
 
     MDSort      (Viterbi.out)
@@ -176,36 +176,36 @@ workflow {
     MDBamIndex  ( MarkDuplicates.out )
 
     MarkDuplicates.out
-    | combine   ( MDBamIndex.out, by: 0 )
-    | map       { [it[0].reference] + it }
-    | combine   ( References, by: 0 )
-    | combine   ( FaidxIndex.out, by: 0 )
-    | map       { it.tail() }
-    | set       { md_reference }
+    | combine   ( MDBamIndex.out, by: 0 )                                           // combine bam index
+    | map       { [it[0].reference] + it }                                          // .reference for channel merge
+    | combine   ( References, by: 0 )                                               // combine reference
+    | combine   ( FaidxIndex.out, by: 0 )                                           // combine reference index
+    | map       { it.tail() }                                                       // remove .reference
+    | set       { md_reference }                                                    // set channel
     FakeVariantCall(md_reference, false)
 
     IndexFeatureFile(FakeVariantCall.out)
 
     MarkDuplicates.out
-    | map       { [it[0].reference] + it }
-    | combine   ( References, by: 0)
-    | combine   ( FaidxIndex.out, by: 0 )
-    | combine   ( DictIndex.out, by: 0)
-    | map       { it.tail() }
-    | combine   ( FakeVariantCall.out, by: 0 )
-    | combine   ( IndexFeatureFile.out, by: 0 )
+    | map       { [it[0].reference] + it }                                          // .reference for channel merge
+    | combine   ( References, by: 0)                                                // combine reference
+    | combine   ( FaidxIndex.out, by: 0 )                                           // combine reference index
+    | combine   ( DictIndex.out, by: 0)                                             // combine reference dictionary
+    | map       { it.tail() }                                                       // remove .reference
+    | combine   ( FakeVariantCall.out, by: 0 )                                      // combine vcf
+    | combine   ( IndexFeatureFile.out, by: 0 )                                     // combine vcf index
     | BaseRecalibrator
 
     MarkDuplicates.out
-    | combine   ( BaseRecalibrator.out, by: 0 )
+    | combine   ( BaseRecalibrator.out, by: 0 )                                     // combine recalibration table
     | ApplyBQSR
 
     ApplyBQSR.out
-    | map       { [it[0].reference] + it }
-    | combine   ( References, by: 0 )
-    | combine   ( FaidxIndex.out, by: 0 )
-    | map       { it.tail() }
-    | set       { bqsr_reference }
+    | map       { [it[0].reference] + it }                                          // .reference for channel merge
+    | combine   ( References, by: 0 )                                               // combine reference
+    | combine   ( FaidxIndex.out, by: 0 )                                           // combine reference index
+    | map       { it.tail() }                                                       // remove .reference
+    | set       { bqsr_reference }                                                  // set channel
     VariantCall ( bqsr_reference, true )
 
     // Create consensuses
