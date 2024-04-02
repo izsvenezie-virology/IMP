@@ -125,7 +125,12 @@ workflow {
     | set       { ref_collect }
 
     // Find missing references
-    MakeBlastDb (references_db, ref_collect.FindRef.first().ifEmpty(false))         // create blastDB only if at least one reference must be found
+   ref_collect.FindRef
+    | first
+    | ifEmpty   (false)
+    | map       { it = it ? true : false }
+    | set       { build_blast_db }
+    MakeBlastDb ( references_db, build_blast_db )                                   // create blastDB only if at least one reference must be found
     FastqToFasta( ref_collect.FindRef )
     BlastN      ( FastqToFasta.out, MakeBlastDb.out )
     GetReferenceNames( BlastN.out )
