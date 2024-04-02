@@ -37,11 +37,11 @@ process RemoveDegenerations{
     time '30s'
 
     input:
-        tuple val(id), path(reference)
+        tuple val(id), path('raw_reference.fa')
     output:
         tuple val(id), path('reference.fa')
 
     """
-    remove_degenerations.py $reference >reference.fa
+    remove_degenerations.py raw_reference.fa >reference.fa
     """
 }
