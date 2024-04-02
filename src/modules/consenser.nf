@@ -14,7 +14,7 @@ process DegeneratedConsensus{
         tuple val(id), path("*.fa"), emit: segments
 
     """
-    consenser --force -d -s CHROMNAME.fa -a ${parameters.name}_CHROMNAME -o consensus.fasta -c $coverage $reference $vcf
+    consenser --force -d -s CHROMNAME.fa -a '${parameters.name}' -o consensus.fasta -c $coverage $reference $vcf
     """
 }
 
@@ -34,6 +34,6 @@ process NonDegeneratedConsensus{
         tuple val(id), path("*.fa"), emit: segments
 
     """
-    consenser --force -s CHROMNAME.fa -a ${parameters.name}_CHROMNAME -o consensus.fasta -c $coverage $reference $vcf
+    consenser --force -s CHROMNAME.fa -a '${parameters.name}' -o consensus.fasta -c $coverage $reference $vcf
     """
 }
