@@ -45,6 +45,7 @@ include{
 include{
     CreateCutadaptPrimers;
     GetReferenceNames;
+    RemoveDegenerations;
 } from './modules/python.nf'
 include{
     FaidxIndex;
@@ -135,6 +136,9 @@ workflow {
     | filter    { !it[1].isEmpty() }                                                // remove empty references: in this case the sample using this reference is not processed
     | mix       ( ref_collect.RefProvided )                                         // merge provided references and found refereces
     | unique                                                                        // keeps only one copy for each reference
+    | RemoveDegenerations
+    
+    RemoveDegenerations.out
     | set       { References }                                                      // set channel
 
     // Reference index processes

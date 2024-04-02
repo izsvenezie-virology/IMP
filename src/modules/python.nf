@@ -29,3 +29,19 @@ process CreateCutadaptPrimers{
     create_cutadapt_primers.py $primers_tsv
     """
 }
+
+process RemoveDegenerations{
+    tag "$id"
+
+    memory '500 MB'
+    time '30s'
+
+    input:
+        tuple val(id), path(reference)
+    output:
+        tuple val(id), path('reference.fa')
+
+    """
+    remove_degenerations.py $reference >reference.fa
+    """
+}
