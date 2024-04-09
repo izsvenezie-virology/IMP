@@ -30,7 +30,7 @@ process CreateCutadaptPrimers{
     """
 }
 
-process RemoveDegenerations{
+process PrepareReference{
     tag "$id"
 
     memory '500 MB'
@@ -39,9 +39,9 @@ process RemoveDegenerations{
     input:
         tuple val(id), path('raw_reference.fa')
     output:
-        tuple val(id), path('reference.fa')
+        tuple val(id), path('*')
 
     """
-    remove_degenerations.py raw_reference.fa >reference.fa
+    prepare_reference.py raw_reference.fa >reference.fa
     """
 }

@@ -13,7 +13,7 @@ input_fasta = sys.argv[1]
 with open(input_fasta, 'r') as f:
     for line in f:
         if line.startswith('>'):
-            print(line.strip(), end='\n')
+            print(line.strip().replace(' ', '_'), end='\n')
             continue
         undeg_seq = list(line.strip().upper())
         for pos, nucl in enumerate(undeg_seq):
