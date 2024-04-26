@@ -103,7 +103,8 @@ process ApplyBQSR{
     input:
         tuple val(id), path(bam), path(recalibration)
     output:
-        tuple val(id), path("*.bam"), path("*.bai")
+        tuple val(id), path("*.bam"), emit: bam
+        tuple val(id), path("*.bai"), emit: bai
 
     """
     gatk --java-options "-XX:ConcGCThreads=1" ApplyBQSR -I $bam -O bqsr.bam -bqsr $recalibration

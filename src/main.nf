@@ -41,6 +41,7 @@ include{
     Viterbi;
     Call as FakeVariantCall;
     Call as VariantCall;
+    IndelQual;
 } from './modules/lofreq.nf'
 include{
     CreateCutadaptPrimers;
@@ -50,6 +51,7 @@ include{
 include{
     FaidxIndex;
     Sort as MDSort;
+    BamIndex as IQBamIndex;
     BamIndex as MDBamIndex;
     BamIndex as BamIndex;
 } from './modules/samtools.nf'
@@ -209,13 +211,22 @@ workflow {
     | combine   ( BaseRecalibrator.out, by: 0 )                                     // combine recalibration table
     | ApplyBQSR
 
-    ApplyBQSR.out
+    ApplyBQSR.out.bam
+    | map       { [it[0].reference] + it }                                          // .reference for channel merge
+    | combine   ( References, by: 0 )                                               // combine reference
+    | map       { it.tail() }                                                       // remove .reference
+    | IndelQual
+
+    IQBamIndex  ( IndelQual.out )
+
+    IndelQual.out
+    | combine   ( IQBamIndex.out, by: 0 )                                           // combine bam index
     | map       { [it[0].reference] + it }                                          // .reference for channel merge
     | combine   ( References, by: 0 )                                               // combine reference
     | combine   ( FaidxIndex.out, by: 0 )                                           // combine reference index
     | map       { it.tail() }                                                       // remove .reference
-    | set       { bqsr_reference }                                                  // set channel
-    VariantCall ( bqsr_reference, true )
+    | set       { to_variantcall_ch }                                               // set channel
+    VariantCall ( to_variantcall_ch, true )
 
     // Create consensuses
     metadata_ch

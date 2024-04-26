@@ -34,3 +34,19 @@ process Call{
     lofreq call-parallel --pp-threads $task.cpus -f $reference -o variants.vcf $bam $call_indels_opt
     """
 }
+
+process IndelQual{
+    tag "$id.sample"
+    
+    memory '500 MB'
+    time '5m'
+
+    input:
+        tuple val(id), path(bam), path(reference)
+    output:
+        tuple val(id), path("*.bam")
+    
+    """
+    lofreq indelqual --dindel -f $reference -o indelqual.bam $bam
+    """
+}
