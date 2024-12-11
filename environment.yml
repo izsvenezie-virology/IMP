@@ -1,0 +1,21 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - anaconda
+dependencies:
+  - fastqc=0.12.1
+  - cutadapt=4.5
+  - bwa=0.7.17
+  - samtools=1.18
+  - gatk4=4.4.0.0
+  - lofreq=2.1.5
+  - bedtools=2.31.1
+  - blast=2.15.0
+  - seqtk=1.4
+  - python
+  - pip
+  - pip:
+    - git+https://gitlab.izsvenezie.it/EdoardoGiussani/consenser
+    - git+https://gitlab.izsvenezie.it/EdoardoGiussani/cover_plotter
+    - git+https://gitlab.izsvenezie.it/EdoardoGiussani/fastatools
