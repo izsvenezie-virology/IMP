@@ -2,6 +2,7 @@
 
 # This script apply following changes to reference:
 # - Remove degenerations
+# - Remove gaps
 # - Remove spaces from FASTA headers
 # - Writes sequences on one line
 # - Set new line to LF
@@ -13,14 +14,16 @@ import sys
 deg_dict = {
     'R': ['A', 'G'], 'Y': ['C', 'T'], 'S': ['G', 'C'], 'W': ['A', 'T'],
     'K': ['G', 'T'], 'M': ['A', 'C'], 'B': ['C', 'G', 'T'], 'D': ['A', 'G', 'T'],
-    'H': ['A', 'C', 'T'], 'V': ['A', 'C', 'G']
+    'H': ['A', 'C', 'T'], 'V': ['A', 'C', 'G'], 'N': ['A', 'T', 'C', 'G']
 }
 
 def remove_degenerations(sequence):
     seq = list(sequence)
     for pos, nucl in enumerate(seq):
-        if nucl not in 'ACGTRYSWKMBDHV':
+        if nucl not in 'ACGTRYSWKMBDHVN-':
             raise ValueError(f'Found invalid character in sequence: {nucl}')
+        if nucl == '-':
+            seq[pos] = ''
         if nucl in deg_dict:
             near = seq[max(pos - 5, 0):min(pos + 5, len(seq)-1)]
             near_count = dict.fromkeys(deg_dict[nucl],0)
