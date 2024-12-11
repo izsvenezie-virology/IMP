@@ -5,7 +5,7 @@ process CoveragePlotter {
     publishDir "coverage", saveAs: { "${id.sample}__${id.reference}.pdf" }, mode: 'copy'
 
     memory '1 GB'
-    time '30s'
+    time '5m'
 
     input:
         tuple val(id), path(coverage)
