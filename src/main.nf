@@ -128,7 +128,8 @@ workflow {
                 primers_file:it.Primers,
                 reference:reference,
                 reference_file:it.Reference,
-                subset:it.Subset
+                subset:it.Subset,
+                group:it.Group
             ]] }
     | set { metadata_ch }
 
@@ -284,9 +285,16 @@ workflow {
     DegeneratedConsensus( vcf_coverage_reference )
     NonDegeneratedConsensus( vcf_coverage_reference )
 
+    metadata_ch
+    | map       { [it[1].id, "${it[1].group}_${it[1].sample}"] }
+    | combine   (DegeneratedConsensus.out.consensus, by: 0)
+    | map       { it.tail() }
+    | collectFile( storeDir: "$workDir", sort: false )
+    | collectFile( name: 'consensuses.fa', storeDir: 'results', sort: true )
+
     // Creates files with all sequences splitted by segment
-    DegeneratedConsensus.out.segments
-    | map       { it[1] }                                                           // Get only files
-    | flatten                                                                       // Transform to list
-    | collectFile( storeDir: 'results' )                                            // Merge content of files by name
+    // DegeneratedConsensus.out.segments
+    // | map       { it[1] }                                                           // Get only files
+    // | flatten                                                                       // Transform to list
+    // | collectFile( storeDir: 'results' )                                            // Merge content of files by name
 }
