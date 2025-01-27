@@ -15,3 +15,20 @@ process GetReference{
     grep --no-group-separator -A 1 -f ${ref_names} ${db_fasta} | sed -E 's/^>.+\\|/>/g' >reference.fa
     """    
 }
+
+process ConcatenateConensus{
+    tag "$id"
+    publishDir "results", mode: 'copy'
+
+    memory '500MB'
+    time '30s'
+
+    input:
+        tuple val(id), path(consensuses, stageAs: '*/*')
+    output:
+        tuple val(id), path("${id}_consensus.fa")
+
+    """
+    cat $consensuses > ${id}_consensus.fa
+    """
+}

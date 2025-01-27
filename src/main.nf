@@ -2,6 +2,7 @@
 
 include{
     GetReference;
+    ConcatenateConensus;
 } from './modules/bash.nf'
 include{
     GenomeCov;
@@ -28,6 +29,10 @@ include {
     FastQC as FastQCRaw;
     FastQC as FastQCClean;
 } from './modules/fastqc.nf'
+include{
+    UpdateFluMut;
+    FluMut;
+} from './modules/flumut.nf'
 include{
     DictIndex;
     FixBam;
@@ -286,15 +291,14 @@ workflow {
     NonDegeneratedConsensus( vcf_coverage_reference )
 
     metadata_ch
-    | map       { [it[1].id, "${it[1].group}_${it[1].sample}"] }
+    | map       { [it[1].id, it[1].group] }
     | combine   (DegeneratedConsensus.out.consensus, by: 0)
     | map       { it.tail() }
-    | collectFile( storeDir: "$workDir", sort: false )
-    | collectFile( name: 'consensuses.fa', storeDir: 'results', sort: true )
+    | groupTuple( by: 0 )
+    | ConcatenateConensus
 
-    // Creates files with all sequences splitted by segment
-    // DegeneratedConsensus.out.segments
-    // | map       { it[1] }                                                           // Get only files
-    // | flatten                                                                       // Transform to list
-    // | collectFile( storeDir: 'results' )                                            // Merge content of files by name
+    if (params.virus == 'AIV'){
+        UpdateFluMut()
+        FluMut(ConcatenateConensus.out, UpdateFluMut.out)
+    }
 }
