@@ -213,7 +213,7 @@ workflow {
     | map       { it.tail() }                                                       // remove .reference
     | BWAmem
 
-    BamIndex    (BWAmem.out)
+    BamIndex    ( BWAmem.out, true )
 
     GenomeCov   ( BWAmem.out )
     | CoveragePlotter
@@ -234,7 +234,7 @@ workflow {
 
     MarkDuplicates( MDSort.out )
 
-    MDBamIndex  ( MarkDuplicates.out )
+    MDBamIndex  ( MarkDuplicates.out, false )
 
     MarkDuplicates.out
     | combine   ( MDBamIndex.out, by: 0 )                                           // combine bam index
@@ -267,7 +267,7 @@ workflow {
     | map       { it.tail() }                                                       // remove .reference
     | IndelQual
 
-    IQBamIndex  ( IndelQual.out )
+    IQBamIndex  ( IndelQual.out, false )
 
     IndelQual.out
     | combine   ( IQBamIndex.out, by: 0 )                                           // combine bam index
