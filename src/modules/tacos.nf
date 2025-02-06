@@ -1,4 +1,4 @@
-process CoveragePlotter {
+process Tacos {
     tag "$id.sample"
     errorStrategy 'ignore'
     
@@ -13,6 +13,6 @@ process CoveragePlotter {
         tuple val(id), path('*')
     
     """
-    coverplotter -o coverage.pdf $coverage
+    tacos -o coverage.pdf $coverage
     """
 }

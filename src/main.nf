@@ -19,9 +19,6 @@ include{
     DegeneratedConsensus;
     NonDegeneratedConsensus;
 } from './modules/consenser.nf'
-include{
-    CoveragePlotter;
-} from './modules/coverplotter.nf'
 include {
     Cutadapt;
 } from './modules/cutadapt.nf'
@@ -63,6 +60,9 @@ include{
 include{
     FastqToFasta
 } from './modules/seqtk.nf'
+include{
+    Tacos;
+} from './modules/tacos.nf'
 
 workflow {
     log.info(""" 
@@ -216,7 +216,7 @@ workflow {
     BamIndex    ( BWAmem.out, true )
 
     GenomeCov   ( BWAmem.out )
-    | CoveragePlotter
+    | Tacos
 
     // GATK best practices
     FixBam      ( BWAmem.out )

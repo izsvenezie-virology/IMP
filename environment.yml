@@ -18,5 +18,4 @@ dependencies:
   - pip
   - pip:
     - git+https://gitlab.izsvenezie.it/EdoardoGiussani/consenser
-    - git+https://gitlab.izsvenezie.it/EdoardoGiussani/cover_plotter
-    - git+https://gitlab.izsvenezie.it/EdoardoGiussani/fastatools
+    - git+https://gitlab.izsvenezie.it/biv/arnesi/tacos.git
