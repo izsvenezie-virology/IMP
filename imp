@@ -1,6 +1,13 @@
 #! /usr/bin/env bash
 set -eu
 
+if [[ $# -eq 0 ]]; then
+  echo "Usage: imp CONFIG_FILE"
+  echo ""
+  echo "Missing CONFIG_FILE. Check https://gitlab.izsvenezie.it/biv/analysis_pipelines/imp for more information."
+  exit 1
+fi
+
 config=$1
 
 workdir="$(pwd | sed 's#/pbs/data/#/pbs/scratch/#')"
