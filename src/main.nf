@@ -2,6 +2,7 @@
 
 include{
     GetReference;
+    ConcatenateConensus;
 } from './modules/bash.nf'
 include{
     GenomeCov;
@@ -18,9 +19,6 @@ include{
     DegeneratedConsensus;
     NonDegeneratedConsensus;
 } from './modules/consenser.nf'
-include{
-    CoveragePlotter;
-} from './modules/coverplotter.nf'
 include {
     Cutadapt;
 } from './modules/cutadapt.nf'
@@ -28,6 +26,10 @@ include {
     FastQC as FastQCRaw;
     FastQC as FastQCClean;
 } from './modules/fastqc.nf'
+include{
+    UpdateFluMut;
+    FluMut;
+} from './modules/flumut.nf'
 include{
     DictIndex;
     FixBam;
@@ -58,8 +60,55 @@ include{
 include{
     FastqToFasta
 } from './modules/seqtk.nf'
+include{
+    Tacos;
+} from './modules/tacos.nf'
 
 workflow {
+    log.info(""" 
+                   .*%%%%%%%%%#.
+                   =***********-
+                   -***********=:.
+                +%%%***********#%%%:
+                =#%%%%%%%%%%%%%%%#=
+                 *%%#####**#####%%:
+                -%%%%%%%%%%%%%%%%%*.
+               *%%%%%%%%%%%%%%%%%%%%+
+             +%%%%%%%%%%%%%%%%%%%@@@@%+
+           +%%%%%%%%%%%%%%%%%%%%%@@@@@%#-
+          *%%%%%%%#%%%%%%%%%%%%%%%%@@@@%%-
+         =%%%%%%%%  %%%%%%%%*:%%%%%%%@@@%*.
+         =%%%%%%%%   *%%%%%%* .%%%%%%%@@%%=
+         +%%%%%%%*             .#%%%%%@@%%=
+         =%%%%%%+                 -%%%%@%%=
+         =%%%%#                     +%%@@%=
+         =%%%%                       =%%%%=
+         =%%%-         .-+++-.        %%%%=
+         =%%%.      %@@@@@@@#.=@+     #%%%=
+         =%%%     :@@@@@@@@:    @@    *%%%=
+         =%%%     #@@@@@@@@-    @@:   *%%%=
+         =%%%     .@@@@@@@@@%-*@@#    +%%%=
+         =%%%       +@@@@@@@@@@@      +%%%=
+         =%%%           .::.          +%%%=
+         =%%%                         +%%%=
+         =%%%                         +%%%=
+         =%%%                         +%%%=
+         =%%%                         +%%%=
+         =%%%                         +%%%=
+         =%%%    ___   __  __   ___   +%%%=
+         =%%%   |_ _| |  \\/  | | _ \\  +%%%=
+         =%%%    | |  | |\\/| | |  _/  +%%%=
+         =%%%   |___| |_|  |_| |_|    +%%%=
+         =%%%                         +%%%=
+         =%%%                         +%%%=
+         +%%%                         +%%%=
+         =%%%%.                      *%%%%=
+          *%%%%%+                 .#%%%%%*
+           :#%%%%%%#+:       .-+#%%%%%#=
+              =#%%%%%%%%%%%%%%%%%%%%+.
+                  =**%%%%%%%%%%*+.
+    """)
+
     // BLAST DB channel
     references_db = file(params.references_database, checkIfExists: true)
 
@@ -84,7 +133,8 @@ workflow {
                 primers_file:it.Primers,
                 reference:reference,
                 reference_file:it.Reference,
-                subset:it.Subset
+                subset:it.Subset,
+                group:it.Group
             ]] }
     | set { metadata_ch }
 
@@ -163,10 +213,10 @@ workflow {
     | map       { it.tail() }                                                       // remove .reference
     | BWAmem
 
-    BamIndex    (BWAmem.out)
+    BamIndex    ( BWAmem.out, true )
 
     GenomeCov   ( BWAmem.out )
-    | CoveragePlotter
+    | Tacos
 
     // GATK best practices
     FixBam      ( BWAmem.out )
@@ -184,7 +234,7 @@ workflow {
 
     MarkDuplicates( MDSort.out )
 
-    MDBamIndex  ( MarkDuplicates.out )
+    MDBamIndex  ( MarkDuplicates.out, false )
 
     MarkDuplicates.out
     | combine   ( MDBamIndex.out, by: 0 )                                           // combine bam index
@@ -217,7 +267,7 @@ workflow {
     | map       { it.tail() }                                                       // remove .reference
     | IndelQual
 
-    IQBamIndex  ( IndelQual.out )
+    IQBamIndex  ( IndelQual.out, false )
 
     IndelQual.out
     | combine   ( IQBamIndex.out, by: 0 )                                           // combine bam index
@@ -240,9 +290,15 @@ workflow {
     DegeneratedConsensus( vcf_coverage_reference )
     NonDegeneratedConsensus( vcf_coverage_reference )
 
-    // Creates files with all sequences splitted by segment
-    DegeneratedConsensus.out.segments
-    | map       { it[1] }                                                           // Get only files
-    | flatten                                                                       // Transform to list
-    | collectFile( storeDir: 'results' )                                            // Merge content of files by name
+    metadata_ch
+    | map       { [it[1].id, it[1].group] }
+    | combine   (DegeneratedConsensus.out.consensus, by: 0)
+    | map       { it.tail() }
+    | groupTuple( by: 0 )
+    | ConcatenateConensus
+
+    if (params.virus == 'AIV'){
+        UpdateFluMut()
+        FluMut(ConcatenateConensus.out, UpdateFluMut.out)
+    }
 }
