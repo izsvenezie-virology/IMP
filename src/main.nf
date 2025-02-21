@@ -2,7 +2,8 @@
 
 include{
     GetReference;
-    ConcatenateConensus;
+    ConcatenateConensus as CC_group;
+    ConcatenateConensus as CC_run;
 } from './modules/bash.nf'
 include{
     GenomeCov;
@@ -39,6 +40,10 @@ include{
     IndexFeatureFile;
     ApplyBQSR;
 } from './modules/gatk.nf'
+include {
+    UpdateGenin2;
+    Genin2;
+} from './modules/genin2.nf'
 include{
     Viterbi;
     Call as FakeVariantCall;
@@ -295,10 +300,18 @@ workflow {
     | combine   (DegeneratedConsensus.out.consensus, by: 0)
     | map       { it.tail() }
     | groupTuple( by: 0 )
-    | ConcatenateConensus
+    | CC_group
 
     if (params.virus == 'AIV'){
+        CC_group.out
+        | map {it -> it[1] }
+        | toList
+        | map {it -> [params.run, it]}
+        | CC_run
+
         UpdateFluMut()
-        FluMut(ConcatenateConensus.out, UpdateFluMut.out)
+        FluMut(CC_group.out, UpdateFluMut.out)
+        UpdateGenin2()
+        Genin2(CC_run.out, UpdateGenin2.out)
     }
 }

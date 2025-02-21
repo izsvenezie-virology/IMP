@@ -24,11 +24,11 @@ process ConcatenateConensus{
     time '30s'
 
     input:
-        tuple val(id), path(consensuses, stageAs: '*/*')
+        tuple val(id), path(consensuses)
     output:
         tuple val(id), path("${id}_consensus.fa")
 
     """
-    cat $consensuses > ${id}_consensus.fa
+    cat * > ${id}_consensus.fa
     """
 }
