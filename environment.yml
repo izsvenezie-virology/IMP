@@ -14,8 +14,9 @@ dependencies:
   - blast=2.15.0
   - seqtk=1.4
   - flumut=0.6.3
+  - genin2
   - python
   - pip
   - pip:
-    - git+https://gitlab.izsvenezie.it/EdoardoGiussani/consenser
+    - git+https://gitlab.izsvenezie.it/EdoardoGiussani/consenser.git
     - git+https://gitlab.izsvenezie.it/biv/arnesi/tacos.git
