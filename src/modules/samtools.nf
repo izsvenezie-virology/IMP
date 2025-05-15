@@ -1,47 +1,55 @@
-process FaidxIndex{
-    tag "$id"
+process FaidxIndex {
+    tag "${id}"
 
     memory '500 MB'
     time '30s'
 
     input:
-        tuple val(id), path(reference)
-    output:
-        tuple val(id), path('*')
+    tuple val(id), path(reference)
 
+    output:
+    tuple val(id), path('*')
+
+    script:
     """
-    samtools faidx $reference
+    samtools faidx ${reference}
     """
 }
 
-process Sort{
-    tag "$id.sample"
+process Sort {
+    tag "${id.sample}"
 
     memory '5 GB'
     time '5m'
 
     input:
-        tuple val(id), path(bam)
+    tuple val(id), path(bam)
+
     output:
-        tuple val(id), path('*')
+    tuple val(id), path('*')
+
+    script:
     """
-    samtools sort -O bam -o sorted.bam $bam
+    samtools sort -O bam -o sorted.bam ${bam}
     """
 }
 
-process BamIndex{
-    tag "$id.sample"
-    publishDir "alignments", saveAs: { "${id.sample}__${id.reference}.bai" }, mode: 'copy', enabled: "$publish"
+process BamIndex {
+    tag "${id.sample}"
+    publishDir "alignments", saveAs: { "${id.sample}__${id.reference}.bai" }, mode: 'copy', enabled: "${publish}"
 
     memory '500 MB'
     time '30s'
 
     input:
-        tuple val(id), path(bam)
-        val(publish)
+    tuple val(id), path(bam)
+    val publish
+
     output:
-        tuple val(id), path('*')
+    tuple val(id), path('*')
+
+    script:
     """
-    samtools index $bam
+    samtools index ${bam}
     """
 }

@@ -1,15 +1,17 @@
 process FastqToFasta {
-    tag "$id"
-    
+    tag "${id}"
+
     memory '500 MB'
     time '1m'
 
     input:
-        tuple val(id), val (subset), path(reads)
+    tuple val(id), val(subset), path(reads)
+
     output:
-        tuple val(id), path('*')
-    
+    tuple val(id), path('*')
+
+    script:
     """
-    cat $reads | seqtk seq -A -f $subset - >reads.fa
+    cat ${reads} | seqtk seq -A -f ${subset} - >reads.fa
     """
 }

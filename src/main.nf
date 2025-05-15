@@ -1,76 +1,77 @@
 #! /usr/bin/env nextflow
 
-include{
-    GetReference;
-    ConcatenateConensus as CC_group;
-    ConcatenateConensus as CC_run;
+include {
+    GetReference ;
+    ConcatenateConensus as CC_group ;
+    ConcatenateConensus as CC_run
 } from './modules/bash.nf'
-include{
-    GenomeCov;
+include {
+    GenomeCov
 } from './modules/bedtools.nf'
-include{
-    BlastN
+include {
+    BlastN ;
     MakeBlastDb
 } from './modules/blast.nf'
 include {
-    BWAmem;
-    BWAIndex;
+    BWAmem ;
+    BWAIndex
 } from './modules/bwa.nf'
-include{
-    DegeneratedConsensus;
-    NonDegeneratedConsensus;
+include {
+    DegeneratedConsensus ;
+    NonDegeneratedConsensus
 } from './modules/consenser.nf'
 include {
-    Cutadapt;
+    Cutadapt
 } from './modules/cutadapt.nf'
 include {
-    FastQC as FastQCRaw;
-    FastQC as FastQCClean;
+    FastQC as FastQCRaw ;
+    FastQC as FastQCClean
 } from './modules/fastqc.nf'
-include{
-    UpdateFluMut;
-    FluMut;
+include {
+    UpdateFluMut ;
+    FluMut
 } from './modules/flumut.nf'
-include{
-    DictIndex;
-    FixBam;
-    CleanBam;
-    MarkDuplicates;
-    BaseRecalibrator;
-    IndexFeatureFile;
-    ApplyBQSR;
+include {
+    DictIndex ;
+    FixBam ;
+    CleanBam ;
+    MarkDuplicates ;
+    BaseRecalibrator ;
+    IndexFeatureFile ;
+    ApplyBQSR
 } from './modules/gatk.nf'
 include {
-    UpdateGenin2;
-    Genin2;
+    UpdateGenin2 ;
+    Genin2
 } from './modules/genin2.nf'
-include{
-    Viterbi;
-    Call as FakeVariantCall;
-    Call as VariantCall;
-    IndelQual;
+include {
+    Viterbi ;
+    Call as FakeVariantCall ;
+    Call as VariantCall ;
+    IndelQual
 } from './modules/lofreq.nf'
-include{
-    CreateCutadaptPrimers;
-    GetReferenceNames;
-    PrepareReference;
+include {
+    CreateCutadaptPrimers ;
+    GetReferenceNames ;
+    PrepareReference
 } from './modules/python.nf'
-include{
-    FaidxIndex;
-    Sort as MDSort;
-    BamIndex as IQBamIndex;
-    BamIndex as MDBamIndex;
-    BamIndex as BamIndex;
+include {
+    FaidxIndex ;
+    Sort as MDSort ;
+    BamIndex as IQBamIndex ;
+    BamIndex as MDBamIndex ;
+    BamIndex as BamIndex
 } from './modules/samtools.nf'
-include{
+include {
     FastqToFasta
 } from './modules/seqtk.nf'
-include{
-    Tacos;
+include {
+    Tacos
 } from './modules/tacos.nf'
 
 workflow {
-    log.info(""" 
+    log.info(
+        """ 
                    .*%%%%%%%%%#.
                    =***********-
                    -***********=:.
@@ -112,7 +113,8 @@ workflow {
            :#%%%%%%#+:       .-+#%%%%%#=
               =#%%%%%%%%%%%%%%%%%%%%+.
                   =**%%%%%%%%%%*+.
-    """)
+    """
+    )
 
     // BLAST DB channel
     references_db = file(params.references_database, checkIfExists: true)
@@ -122,192 +124,204 @@ workflow {
 
     // Samples channels creation
     Channel.fromFilePairs("${params.raw_reads_folder}/*_R{1,2}*fastq.gz")
-    | map { [it[0].split("_S")[0], it[1]] }
-    | set { raw_reads }
+        | map { [it[0].split("_S")[0], it[1]] }
+        | set { raw_reads }
 
     Channel.fromPath(params.samples_metadata)
-    | splitCsv( header:true, sep:'\t' )
-    | map {
-            reference = it.Reference ? file(it.Reference).simpleName : "${it.Sample}_ref"
-            primers = it.Primers ? file(it.Primers).simpleName : file(params.null_file).simpleName
-            [it.Sample, [
-                id:[sample: it.Sample, reference: reference],
-                sample:it.Sample,
-                name:it.Name,
-                primers:primers,
-                primers_file:it.Primers,
-                reference:reference,
-                reference_file:it.Reference,
-                subset:it.Subset,
-                group:it.Group
-            ]] }
-    | set { metadata_ch }
+        | splitCsv(header: true, sep: '\t')
+        | map {
+            def reference = it.Reference ? file(it.Reference).simpleName : "${it.Sample}_ref"
+            def primers = it.Primers ? file(it.Primers).simpleName : file(params.null_file).simpleName
+            [
+                it.Sample,
+                [
+                    id: [sample: it.Sample, reference: reference],
+                    sample: it.Sample,
+                    name: it.Name,
+                    primers: primers,
+                    primers_file: it.Primers,
+                    reference: reference,
+                    reference_file: it.Reference,
+                    subset: it.Subset,
+                    group: it.Group,
+                ],
+            ]
+        }
+        | set { metadata_ch }
 
     metadata_ch
-    | map {
-        if (it[1].primers_file)
-            [it[1].primers, file(it[1].primers_file, checkIfExists: true)]
-        else
-            [it[1].primers, file(params.null_file, checkIfExists: true)]}
-    | unique
-    | CreateCutadaptPrimers
+        | map {
+            if (it[1].primers_file) {
+                [it[1].primers, file(it[1].primers_file, checkIfExists: true)]
+            }
+            else {
+                [it[1].primers, file(params.null_file, checkIfExists: true)]
+            }
+        }
+        | unique
+        | CreateCutadaptPrimers
 
     // Clean reads
     raw_reads
-    | join      ( metadata_ch )
-    | map       { [it[2].primers, it[2].sample, [it[2].minQual, it[2].minLen], it[1]] }
-    | combine   ( CreateCutadaptPrimers.out, by: 0 )
-    | map       { it.tail() }
-    | set       { to_cutadapt_ch }
-    Cutadapt    ( to_cutadapt_ch, adapters )
+        | join(metadata_ch)
+        | map { [it[2].primers, it[2].sample, [it[2].minQual, it[2].minLen], it[1]] }
+        | combine(CreateCutadaptPrimers.out, by: 0)
+        | map { it.tail() }
+        | set { to_cutadapt_ch }
+    Cutadapt(to_cutadapt_ch, adapters)
 
     // Assess reads quality
     raw_reads
-    | join      ( metadata_ch )                                                     // join metadata to keep only samples to analyze
-    | map       { [it[0], it[1]] }                                                  // keep only ID and raw reads files
-    | set       { to_fastqcraw_ch }                                                 // set channel
+        | join(metadata_ch)
+        | map { [it[0], it[1]] }
+        | set { to_fastqcraw_ch }
 
-    FastQCRaw   ( to_fastqcraw_ch, 'raw' )
-    FastQCClean ( Cutadapt.out, 'clean' )
+    FastQCRaw(to_fastqcraw_ch, 'raw')
+    FastQCClean(Cutadapt.out, 'clean')
 
     // References collection channel creation
     metadata_ch
-    | combine   ( Cutadapt.out, by: 0 )
-    | branch    {
-                  FindRef: it[1].reference_file == ''
-                      return [it[1].reference, it[1].subset ?: 1, it[2]]
-                  RefProvided: true
-                      return [it[1].reference, file(it[1].reference_file, checkIfExists: true)]
-    }
-    | set       { ref_collect }
+        | combine(Cutadapt.out, by: 0)
+        | branch {
+            FindRef: it[1].reference_file == ''
+            return [it[1].reference, it[1].subset ?: 1, it[2]]
+            RefProvided: true
+            return [it[1].reference, file(it[1].reference_file, checkIfExists: true)]
+        }
+        | set { ref_collect }
 
     // Find missing references
-   ref_collect.FindRef
-    | first
-    | ifEmpty   (false)
-    | map       { it = it ? true : false }
-    | set       { build_blast_db }
-    MakeBlastDb ( references_db, build_blast_db )                                   // create blastDB only if at least one reference must be found
-    FastqToFasta( ref_collect.FindRef )
-    BlastN      ( FastqToFasta.out, MakeBlastDb.out )
-    GetReferenceNames( BlastN.out )
-    GetReference( GetReferenceNames.out, references_db )
+    ref_collect.FindRef
+        | first
+        | ifEmpty(false)
+        | map { it ? true : false }
+        | set { build_blast_db }
+    MakeBlastDb(references_db, build_blast_db)
+    // create blastDB only if at least one reference must be found
+    FastqToFasta(ref_collect.FindRef)
+    BlastN(FastqToFasta.out, MakeBlastDb.out)
+    GetReferenceNames(BlastN.out)
+    GetReference(GetReferenceNames.out, references_db)
 
     // References channel creation
     GetReference.out
-    | filter    { !it[1].isEmpty() }                                                // remove empty references: in this case the sample using this reference is not processed
-    | mix       ( ref_collect.RefProvided )                                         // merge provided references and found refereces
-    | unique                                                                        // keeps only one copy for each reference
-    | PrepareReference
-    
+        | filter { !it[1].isEmpty() }
+        | mix(ref_collect.RefProvided)
+        | unique
+        | PrepareReference
+
     PrepareReference.out
-    | set       { References }                                                      // set channel
+        | set { References }
+    // set channel
 
     // Reference index processes
-    BWAIndex    ( References )
-    FaidxIndex  ( References )
-    DictIndex   ( References )
+    BWAIndex(References)
+    FaidxIndex(References)
+    DictIndex(References)
 
     // Reads alignment
     metadata_ch
-    | map       { [ it[1].sample, it[1].reference, it[1].id]}                       // .sample and .reference for channel merge, id is a parameter
-    | combine   (Cutadapt.out, by: 0)                                               // combine cleaned reads
-    | map       { it.tail() }                                                       // remove .sample
-    | combine   ( References, by: 0)                                                // combine reference
-    | combine   ( BWAIndex.out, by: 0 )                                             // combine reference index
-    | map       { it.tail() }                                                       // remove .reference
-    | BWAmem
+        | map { [it[1].sample, it[1].reference, it[1].id] }
+        | combine(Cutadapt.out, by: 0)
+        | map { it.tail() }
+        | combine(References, by: 0)
+        | combine(BWAIndex.out, by: 0)
+        | map { it.tail() }
+        | BWAmem
 
-    BamIndex    ( BWAmem.out, true )
+    BamIndex(BWAmem.out, true)
 
-    GenomeCov   ( BWAmem.out )
-    | Tacos
+    GenomeCov(BWAmem.out)
+        | Tacos
 
     // GATK best practices
-    FixBam      ( BWAmem.out )
+    FixBam(BWAmem.out)
 
-    CleanBam    ( FixBam.out )
+    CleanBam(FixBam.out)
 
     CleanBam.out
-    | map       { [it[0].reference] + it }                                          // .refrence for channel merge
-    | combine   ( References, by: 0)                                                // combine reference
-    | combine   ( BWAIndex.out, by: 0 )                                             // combine reference index
-    | map       { it.tail() }                                                       // remover .refrence
-    | Viterbi
+        | map { [it[0].reference] + it }
+        | combine(References, by: 0)
+        | combine(BWAIndex.out, by: 0)
+        | map { it.tail() }
+        | Viterbi
 
-    MDSort      (Viterbi.out)
+    MDSort(Viterbi.out)
 
-    MarkDuplicates( MDSort.out )
+    MarkDuplicates(MDSort.out)
 
-    MDBamIndex  ( MarkDuplicates.out, false )
+    MDBamIndex(MarkDuplicates.out, false)
 
     MarkDuplicates.out
-    | combine   ( MDBamIndex.out, by: 0 )                                           // combine bam index
-    | map       { [it[0].reference] + it }                                          // .reference for channel merge
-    | combine   ( References, by: 0 )                                               // combine reference
-    | combine   ( FaidxIndex.out, by: 0 )                                           // combine reference index
-    | map       { it.tail() }                                                       // remove .reference
-    | set       { md_reference }                                                    // set channel
+        | combine(MDBamIndex.out, by: 0)
+        | map { [it[0].reference] + it }
+        | combine(References, by: 0)
+        | combine(FaidxIndex.out, by: 0)
+        | map { it.tail() }
+        | set { md_reference }
+    // set channel
     FakeVariantCall(md_reference, false)
 
     IndexFeatureFile(FakeVariantCall.out)
 
     MarkDuplicates.out
-    | map       { [it[0].reference] + it }                                          // .reference for channel merge
-    | combine   ( References, by: 0)                                                // combine reference
-    | combine   ( FaidxIndex.out, by: 0 )                                           // combine reference index
-    | combine   ( DictIndex.out, by: 0)                                             // combine reference dictionary
-    | map       { it.tail() }                                                       // remove .reference
-    | combine   ( FakeVariantCall.out, by: 0 )                                      // combine vcf
-    | combine   ( IndexFeatureFile.out, by: 0 )                                     // combine vcf index
-    | BaseRecalibrator
+        | map { [it[0].reference] + it }
+        | combine(References, by: 0)
+        | combine(FaidxIndex.out, by: 0)
+        | combine(DictIndex.out, by: 0)
+        | map { it.tail() }
+        | combine(FakeVariantCall.out, by: 0)
+        | combine(IndexFeatureFile.out, by: 0)
+        | BaseRecalibrator
 
     MarkDuplicates.out
-    | combine   ( BaseRecalibrator.out, by: 0 )                                     // combine recalibration table
-    | ApplyBQSR
+        | combine(BaseRecalibrator.out, by: 0)
+        | ApplyBQSR
 
     ApplyBQSR.out.bam
-    | map       { [it[0].reference] + it }                                          // .reference for channel merge
-    | combine   ( References, by: 0 )                                               // combine reference
-    | map       { it.tail() }                                                       // remove .reference
-    | IndelQual
+        | map { [it[0].reference] + it }
+        | combine(References, by: 0)
+        | map { it.tail() }
+        | IndelQual
 
-    IQBamIndex  ( IndelQual.out, false )
+    IQBamIndex(IndelQual.out, false)
 
     IndelQual.out
-    | combine   ( IQBamIndex.out, by: 0 )                                           // combine bam index
-    | map       { [it[0].reference] + it }                                          // .reference for channel merge
-    | combine   ( References, by: 0 )                                               // combine reference
-    | combine   ( FaidxIndex.out, by: 0 )                                           // combine reference index
-    | map       { it.tail() }                                                       // remove .reference
-    | set       { to_variantcall_ch }                                               // set channel
-    VariantCall ( to_variantcall_ch, true )
+        | combine(IQBamIndex.out, by: 0)
+        | map { [it[0].reference] + it }
+        | combine(References, by: 0)
+        | combine(FaidxIndex.out, by: 0)
+        | map { it.tail() }
+        | set { to_variantcall_ch }
+    // set channel
+    VariantCall(to_variantcall_ch, true)
 
     // Create consensuses
     metadata_ch
-    | map       { [it[1].id, it[1].reference, it[1].id, [name: it[1].name]] }       // .id and .reference for channel merge, .id and .name are parameters
-    | combine   ( VariantCall.out, by: 0 )                                          // combine vcf file
-    | combine   ( GenomeCov.out, by: 0 )                                            // combine coverage file
-    | map       { it.tail() }                                                       // remove .id
-    | combine   ( References, by: 0 )                                               // combine reference file
-    | map       { it.tail() }                                                       // remove .reference
-    | set       { vcf_coverage_reference }                                          // set channel
-    DegeneratedConsensus( vcf_coverage_reference )
-    NonDegeneratedConsensus( vcf_coverage_reference )
+        | map { [it[1].id, it[1].reference, it[1].id, [name: it[1].name]] }
+        | combine(VariantCall.out, by: 0)
+        | combine(GenomeCov.out, by: 0)
+        | map { it.tail() }
+        | combine(References, by: 0)
+        | map { it.tail() }
+        | set { vcf_coverage_reference }
+    // set channel
+    DegeneratedConsensus(vcf_coverage_reference)
+    NonDegeneratedConsensus(vcf_coverage_reference)
 
     metadata_ch
-    | map       { [it[1].id, it[1].group] }
-    | combine   (DegeneratedConsensus.out.consensus, by: 0)
-    | map       { it.tail() }
-    | groupTuple( by: 0 )
-    | CC_group
+        | map { [it[1].id, it[1].group] }
+        | combine(DegeneratedConsensus.out.consensus, by: 0)
+        | map { it.tail() }
+        | groupTuple(by: 0)
+        | CC_group
 
-    if (params.virus == 'AIV'){
+    if (params.virus == 'AIV') {
         CC_group.out
-        | map {it -> it[1] }
-        | toList
-        | map {it -> [params.run, it]}
-        | CC_run
+            | map { it -> it[1] }
+            | toList
+            | map { it -> [params.run, it] }
+            | CC_run
 
         UpdateFluMut()
         FluMut(CC_group.out, UpdateFluMut.out)

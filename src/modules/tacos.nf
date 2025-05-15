@@ -1,18 +1,20 @@
 process Tacos {
-    tag "$id.sample"
+    tag "${id.sample}"
     errorStrategy 'ignore'
-    
+
     publishDir "coverage", saveAs: { "${id.sample}__${id.reference}.pdf" }, mode: 'copy'
 
     memory '1 GB'
     time '5m'
 
     input:
-        tuple val(id), path(coverage)
+    tuple val(id), path(coverage)
+
     output:
-        tuple val(id), path('*')
-    
+    tuple val(id), path('*')
+
+    script:
     """
-    tacos -o coverage.pdf $coverage
+    tacos -o coverage.pdf ${coverage}
     """
 }
