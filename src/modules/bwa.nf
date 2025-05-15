@@ -1,4 +1,4 @@
-process BWAmem {
+process BWAMem {
     tag "${id.sample}"
     label 'multiThread'
     publishDir "alignments", saveAs: { "${id.sample}__${id.reference}.bam" }, mode: 'copy'

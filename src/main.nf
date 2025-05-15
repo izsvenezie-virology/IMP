@@ -13,7 +13,7 @@ include {
     MakeBlastDb
 } from './modules/blast.nf'
 include {
-    BWAmem ;
+    BWAMem ;
     BWAIndex
 } from './modules/bwa.nf'
 include {
@@ -227,15 +227,15 @@ workflow {
         | combine(References, by: 0)
         | combine(BWAIndex.out, by: 0)
         | map { it.tail() }
-        | BWAmem
+        | BWAMem
 
-    BamIndex(BWAmem.out, true)
+    BamIndex(BWAMem.out, true)
 
-    GenomeCov(BWAmem.out)
+    GenomeCov(BWAMem.out)
         | Tacos
 
     // GATK best practices
-    FixBam(BWAmem.out)
+    FixBam(BWAMem.out)
 
     CleanBam(FixBam.out)
 
