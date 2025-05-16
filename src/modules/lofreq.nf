@@ -19,7 +19,6 @@ process Viterbi {
 process Call {
     tag "${id.sample}"
     label 'multiThread'
-    publishDir 'vcfs', saveAs: { "${id.sample}__${id.reference}.vcf" }, mode: 'copy', enabled: "${call_indels}"
 
     memory '5 GB'
     time '15m'

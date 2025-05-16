@@ -36,7 +36,6 @@ process Sort {
 
 process BamIndex {
     tag "${id.sample}"
-    publishDir "alignments", saveAs: { "${id.sample}__${id.reference}.bai" }, mode: 'copy', enabled: "${publish}"
 
     memory '500 MB'
     time '30s'

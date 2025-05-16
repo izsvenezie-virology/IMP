@@ -1,9 +1,6 @@
 process FastQC {
     tag "${id}"
 
-    publishDir "reads_quality/${type}", saveAs: { "${id}_R1_${type}.html" }, mode: 'copy', pattern: '*_R1_*'
-    publishDir "reads_quality/${type}", saveAs: { "${id}_R2_${type}.html" }, mode: 'copy', pattern: '*_R2_*'
-
     cpus 2
     memory '2 GB'
     time '5m'
@@ -13,7 +10,7 @@ process FastQC {
     val type
 
     output:
-    tuple val(id), path('*html')
+    tuple val(id), val(type), path('*.html'), topic: reads_quality
 
     script:
     """

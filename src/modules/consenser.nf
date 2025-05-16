@@ -4,9 +4,6 @@ process DegeneratedConsensus {
     memory '500 MB'
     time '30s'
 
-    publishDir "consensus", mode: 'copy', pattern: "${id.sample}__${id.reference}.fa"
-    publishDir "consensus/chroms", mode: 'copy', pattern: "${id.sample}__${id.reference}_*.fa"
-
     input:
     tuple val(id), val(parameters), path(vcf), path(coverage), path(reference)
 
@@ -23,8 +20,8 @@ process DegeneratedConsensus {
 process NonDegeneratedConsensus {
     tag "${id.sample}"
 
-    publishDir "consensus_no_degenerations", mode: 'copy', pattern: "${id.sample}__${id.reference}.fa"
-    publishDir "consensus_no_degenerations/chroms", mode: 'copy', pattern: "${id.sample}__${id.reference}_*.fa"
+    // publishDir "consensus_no_degenerations", mode: 'copy', pattern: "${id.sample}__${id.reference}.fa"
+    // publishDir "consensus_no_degenerations/chroms", mode: 'copy', pattern: "${id.sample}__${id.reference}_*.fa"
 
     memory '500 MB'
     time '30s'

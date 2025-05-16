@@ -1,7 +1,6 @@
 process BWAMem {
     tag "${id.sample}"
     label 'multiThread'
-    publishDir "alignments", saveAs: { "${id.sample}__${id.reference}.bam" }, mode: 'copy'
 
     memory '10 GB'
     time '5m'

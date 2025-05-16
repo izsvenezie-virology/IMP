@@ -1,6 +1,5 @@
 process GetReference {
     tag "${id}"
-    publishDir "refs", saveAs: { "${id}.fa" }, mode: 'copy'
 
     memory '500 MB'
     time '30s'
@@ -20,7 +19,6 @@ process GetReference {
 
 process ConcatenateConensus {
     tag "${id}"
-    publishDir "results", mode: 'copy'
 
     memory '500MB'
     time '30s'
@@ -29,7 +27,7 @@ process ConcatenateConensus {
     tuple val(id), path(consensuses)
 
     output:
-    tuple val(id), path("${id}_consensus.fa")
+    tuple val(id), path("${id}_consensus.fa"), topic: 'results'
 
     script:
     """

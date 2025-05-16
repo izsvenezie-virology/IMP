@@ -1,5 +1,7 @@
 #! /usr/bin/env nextflow
 
+nextflow.preview.output = true
+
 include {
     GetReference ;
     ConcatenateConensus as CC_group ;
@@ -74,6 +76,7 @@ include {
 } from './workflows/aiv_subtype.nf'
 
 workflow {
+    main:
     log.info(
         """ 
                    .*%%%%%%%%%#.
@@ -336,5 +339,77 @@ workflow {
         FluMut(CC_group.out, UpdateFluMut.out)
         UpdateGenin2()
         Genin2(CC_run.out, UpdateGenin2.out)
+    }
+
+    publish:
+    fastqc = Channel.topic('reads_quality')
+    cutadapt = Cutadapt.out
+    reference = GetReference.out
+    bwa = BWAMem.out
+    bwa_index = BamIndex.out
+    coverage = GenomeCov.out
+    tacos = Tacos.out
+    vcfs = VariantCall.out
+    consensus_deg = DegeneratedConsensus.out.consensus
+    consensus_undeg = NonDegeneratedConsensus.out.consensus
+    results = Channel.topic("results")
+}
+
+output {
+    fastqc {
+        path { sample ->
+            sample[2][0] >> "reads_quality/${sample[1]}/${sample[0]}_R1.html"
+            sample[2][1] >> "reads_quality/${sample[1]}/${sample[0]}_R2.html"
+        }
+    }
+    cutadapt {
+        path { sample ->
+            sample[1][0] >> "cleaned_reads/${sample[0]}_R1_cleaned.fastq.gz"
+            sample[1][1] >> "cleaned_reads/${sample[0]}_R2_cleaned.fastq.gz"
+        }
+        mode 'symlink'
+    }
+    reference {
+        path { sample ->
+            sample[1] >> "refs/${sample[0]}.fa"
+        }
+    }
+    bwa {
+        path { sample ->
+            sample[1] >> "alignments/${sample[0].sample}__${sample[0].reference}.bam"
+        }
+    }
+    bwa_index {
+        path { sample ->
+            sample[1] >> "alignments/${sample[0].sample}__${sample[0].reference}.bam.bai"
+        }
+    }
+    coverage {
+        path { sample ->
+            sample[1] >> "coverage/raw/${sample[0].sample}__${sample[0].reference}_coverage.tsv"
+        }
+    }
+    tacos {
+        path { sample ->
+            sample[1] >> "coverage/${sample[0].sample}__${sample[0].reference}_coverage.pdf"
+        }
+    }
+    vcfs {
+        path { sample ->
+            sample[1] >> "vcfs/${sample[0].sample}__${sample[0].reference}.vcf"
+        }
+    }
+    consensus_deg {
+        path { sample ->
+            sample[1] >> "consensus/${sample[0].sample}__${sample[0].reference}.fa"
+        }
+    }
+    consensus_undeg {
+        path { sample ->
+            sample[1] >> "consensus/undegenerated/${sample[0].sample}__${sample[0].reference}.fa"
+        }
+    }
+    results {
+        path "results/"
     }
 }

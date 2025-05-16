@@ -16,7 +16,6 @@ process UpdateFluMut {
 
 process FluMut {
     tag "${id}"
-    publishDir "results", mode: 'copy'
 
     memory '2 GB'
     time '30m'
@@ -26,7 +25,7 @@ process FluMut {
     val updated
 
     output:
-    tuple val(id), path('*')
+    tuple val(id), path('*'), topic: 'results'
 
     script:
     """
