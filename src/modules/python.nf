@@ -41,13 +41,31 @@ process PrepareReference {
     time '30s'
 
     input:
-    tuple val(id), path('raw_reference.fa')
+    tuple val(id), path(reference)
 
     output:
     tuple val(id), path('*')
 
     script:
     """
-    prepare_reference.py raw_reference.fa >reference.fa
+    prepare_reference.py ${reference} >reference.fa
+    """
+}
+
+process FindSubtypes {
+    tag "${id.sample}_${id.reference}"
+
+    memory '500 MB'
+    time '30s'
+
+    input:
+    tuple val(id), path(coverage)
+
+    output:
+    tuple val(id), path('*')
+
+    script:
+    """
+    find_subtypes.py ${id.sample} ${coverage} >alignment_stats.tsv
     """
 }

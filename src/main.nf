@@ -69,6 +69,10 @@ include {
     Tacos
 } from './modules/tacos.nf'
 
+include {
+    AIVSubtype
+} from './workflows/aiv_subtype.nf'
+
 workflow {
     log.info(
         """ 
@@ -317,6 +321,11 @@ workflow {
         | CC_group
 
     if (params.virus == 'AIV') {
+        AIVSubtype(Cutadapt.out)
+            | map { [it[1]] }
+            | flatten
+            | collectFile(name: 'subtypes.tsv', sort: { file -> file.text }, storeDir: 'results')
+
         CC_group.out
             | map { it -> it[1] }
             | toList
