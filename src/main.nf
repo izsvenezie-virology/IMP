@@ -19,8 +19,8 @@ include {
     BWAIndex
 } from './modules/bwa.nf'
 include {
-    DegeneratedConsensus ;
-    NonDegeneratedConsensus
+    Consenser as DegeneratedConsensus ;
+    Consenser as NonDegeneratedConsensus
 } from './modules/consenser.nf'
 include {
     Cutadapt
@@ -313,8 +313,8 @@ workflow {
         | map { it.tail() }
         | set { vcf_coverage_reference }
     // set channel
-    DegeneratedConsensus(vcf_coverage_reference)
-    NonDegeneratedConsensus(vcf_coverage_reference)
+    DegeneratedConsensus(vcf_coverage_reference, true)
+    NonDegeneratedConsensus(vcf_coverage_reference, false)
 
     metadata_ch
         | map { [it[1].id, it[1].group] }
@@ -352,6 +352,8 @@ workflow {
     vcfs = VariantCall.out
     consensus_deg = DegeneratedConsensus.out.consensus
     consensus_undeg = NonDegeneratedConsensus.out.consensus
+    conensus_segments_deg = DegeneratedConsensus.out.segments
+    consensus_segments_undeg = NonDegeneratedConsensus.out.segments
     results = Channel.topic("results")
 }
 
@@ -407,6 +409,16 @@ output {
     consensus_undeg {
         path { sample ->
             sample[1] >> "consensus/undegenerated/${sample[0].sample}__${sample[0].reference}.fa"
+        }
+    }
+    conensus_segments_deg {
+        path { sample ->
+            sample[1] >> "consensus/segments/${sample[0].sample}__${sample[0].reference}.fa"
+        }
+    }
+    consensus_segments_undeg {
+        path { sample ->
+            sample[1] >> "consensus/undegenerated/segments/${sample[0].sample}__${sample[0].reference}.fa"
         }
     }
     results {
