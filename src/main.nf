@@ -131,7 +131,7 @@ workflow {
 
     // Samples channels creation
     Channel.fromFilePairs("${params.raw_reads_folder}/*_R{1,2}*fastq.gz")
-        | map { it -> [it[0].split("_S")[0], it[1]] }
+        | map { it -> [it[0].split("_S")[0], it.tail().flatten()] }
         | set { raw_reads }
 
     Channel.fromPath(params.samples_metadata)
@@ -140,60 +140,60 @@ workflow {
             def reference = it.Reference ? file(it.Reference).simpleName : "${it.Sample}_ref"
             def primers = it.Primers ? file(it.Primers).simpleName : file(params.null_file).simpleName
             [
-                it.Sample,
-                [
-                    id: "${it.Sample}__${reference}",
-                    sample: it.Sample,
-                    name: it.Name,
-                    primers: primers,
-                    primers_file: it.Primers,
-                    reference: reference,
-                    reference_file: it.Reference,
-                    subset: it.Subset,
-                    group: it.Group,
-                ],
+                id: "${it.Sample}__${reference}",
+                sample: it.Sample,
+                name: it.Name,
+                primers: primers,
+                primers_file: it.Primers,
+                reference: reference,
+                reference_file: it.Reference,
+                subset: it.Subset,
+                group: it.Group,
             ]
         }
         | set { metadata_ch }
 
     metadata_ch
-        | map {
-            if (it[1].primers_file) {
-                [it[1].primers, file(it[1].primers_file, checkIfExists: true)]
+        | map { meta ->
+            if (meta.primers_file) {
+                [meta.primers, file(meta.primers_file, checkIfExists: true)]
             }
             else {
-                [it[1].primers, file(params.null_file, checkIfExists: true)]
+                [meta.primers, file(params.null_file, checkIfExists: true)]
             }
         }
         | unique
         | CreateCutadaptPrimers
 
     // Clean reads
-    raw_reads
-        | join(metadata_ch)
-        | map { it -> [it[2].primers, it[2].sample, [it[2].minQual, it[2].minLen], it[1]] }
+    metadata_ch
+        | map { meta -> [meta.sample, meta.primers, meta.sample, [meta.minQual, meta.minLen]] }
+        | combine(raw_reads, by: 0)
+        | map { it -> it.tail() }
         | combine(CreateCutadaptPrimers.out, by: 0)
         | map { it -> it.tail() }
         | set { to_cutadapt_ch }
     Cutadapt(to_cutadapt_ch, adapters)
 
-    // Assess reads quality
-    raw_reads
-        | join(metadata_ch)
-        | map { it -> [it[0], it[1]] }
-        | set { to_fastqcraw_ch }
+    metadata_ch
+        | map { meta -> [meta.sample] }
+        | combine(raw_reads, by: 0)
+        | set { to_fastqc_raw_ch }
 
-    FastQCRaw(to_fastqcraw_ch, 'raw')
+    // Reads quality assesment
+    FastQCRaw(to_fastqc_raw_ch, 'raw')
     FastQCClean(Cutadapt.out, 'clean')
 
     // References collection channel creation
     metadata_ch
+        | map { meta -> [meta.sample, meta] }
         | combine(Cutadapt.out, by: 0)
+        | map { it -> it.tail() }
         | branch {
-            FindRef: it[1].reference_file == ''
-            return [it[1].reference, it[1].subset ?: 1, it[2]]
+            FindRef: it[0].reference_file == ''
+            return [it[0].reference, it[0].subset ?: 1, it[1]]
             RefProvided: true
-            return [it[1].reference, file(it[1].reference_file, checkIfExists: true)]
+            return [it[0].reference, file(it[0].reference_file, checkIfExists: true)]
         }
         | set { ref_collect }
 
@@ -203,8 +203,8 @@ workflow {
         | ifEmpty(false)
         | map { it -> it ? true : false }
         | set { build_blast_db }
-    MakeBlastDb(references_db, build_blast_db)
     // create blastDB only if at least one reference must be found
+    MakeBlastDb(references_db, build_blast_db)
     FastqToFasta(ref_collect.FindRef)
     BlastN(FastqToFasta.out, MakeBlastDb.out)
     GetReferenceNames(BlastN.out)
@@ -225,7 +225,7 @@ workflow {
 
     // Reads alignment
     metadata_ch
-        | map { it -> [it[1].sample, it[1].reference, it[1].id] }
+        | map { meta -> [meta.sample, meta.reference, meta.id] }
         | combine(Cutadapt.out, by: 0)
         | map { it -> it.tail() }
         | combine(References, by: 0)
@@ -244,7 +244,7 @@ workflow {
     CleanBam(FixBam.out)
 
     metadata_ch
-        | map { it -> [it[1].id, it[1].reference, it[1].id] }
+        | map { meta -> [meta.id, meta.reference, meta.id] }
         | combine(CleanBam.out, by: 0)
         | map { it -> it.tail() }
         | combine(References, by: 0)
@@ -259,7 +259,7 @@ workflow {
     MDBamIndex(MarkDuplicates.out, false)
 
     metadata_ch
-        | map { it -> [it[1].id, it[1].reference, it[1].id] }
+        | map { meta -> [meta.id, meta.reference, meta.id] }
         | combine(MarkDuplicates.out, by: 0)
         | combine(MDBamIndex.out, by: 0)
         | map { it -> it.tail() }
@@ -273,7 +273,7 @@ workflow {
     IndexFeatureFile(FakeVariantCall.out)
 
     metadata_ch
-        | map { it -> [it[1].id, it[1].reference, it[1].id] }
+        | map { meta -> [meta.id, meta.reference, meta.id] }
         | combine(MarkDuplicates.out, by: 0)
         | map { it -> it.tail() }
         | combine(References, by: 0)
@@ -289,7 +289,7 @@ workflow {
         | ApplyBQSR
 
     metadata_ch
-        | map { it -> [it[1].id, it[1].reference, it[1].id] }
+        | map { meta -> [meta.id, meta.reference, meta.id] }
         | combine(ApplyBQSR.out, by: 0)
         | map { it -> it.tail() }
         | combine(References, by: 0)
@@ -299,7 +299,7 @@ workflow {
     IQBamIndex(IndelQual.out, false)
 
     metadata_ch
-        | map { it -> [it[1].id, it[1].reference, it[1].id] }
+        | map { meta -> [meta.id, meta.reference, meta.id] }
         | combine(IndelQual.out, by: 0)
         | combine(IQBamIndex.out, by: 0)
         | map { it -> it.tail() }
@@ -312,7 +312,7 @@ workflow {
 
     // Create consensuses
     metadata_ch
-        | map { it -> [it[1].id, it[1].reference, it[1].id, [name: it[1].name]] }
+        | map { meta -> [meta.id, meta.reference, meta.id, [name: meta.name]] }
         | combine(VariantCall.out, by: 0)
         | combine(GenomeCov.out, by: 0)
         | map { it -> it.tail() }
@@ -324,7 +324,7 @@ workflow {
     NonDegeneratedConsensus(vcf_coverage_reference, false)
 
     metadata_ch
-        | map { [it[1].id, it[1].group] }
+        | map { meta -> [meta.id, meta.group] }
         | combine(DegeneratedConsensus.out.consensus, by: 0)
         | map { it -> it.tail() }
         | groupTuple(by: 0)
