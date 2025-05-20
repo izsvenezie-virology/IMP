@@ -25,7 +25,7 @@ process FluMut {
     val updated
 
     output:
-    tuple val(id), path('*'), topic: 'results'
+    tuple val(id), path("${id}_flumut.xlsm"), topic: 'results'
 
     script:
     """

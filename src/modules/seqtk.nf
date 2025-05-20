@@ -8,7 +8,7 @@ process FastqToFasta {
     tuple val(id), val(subset), path(reads)
 
     output:
-    tuple val(id), path('*')
+    tuple val(id), path("reads.fa")
 
     script:
     """

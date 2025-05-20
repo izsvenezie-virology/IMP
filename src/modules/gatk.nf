@@ -17,7 +17,7 @@ process DictIndex {
 }
 
 process IndexFeatureFile {
-    tag "${id.sample}"
+    tag "${id}"
 
     memory '1 GB'
     time '30s'
@@ -35,7 +35,7 @@ process IndexFeatureFile {
 }
 
 process FixBam {
-    tag "${id.sample}"
+    tag "${id}"
 
     memory '20 GB'
     time '5m'
@@ -44,7 +44,7 @@ process FixBam {
     tuple val(id), path(bam)
 
     output:
-    tuple val(id), path("*")
+    tuple val(id), path("fixed.bam")
 
     script:
     """
@@ -53,7 +53,7 @@ process FixBam {
 }
 
 process CleanBam {
-    tag "${id.sample}"
+    tag "${id}"
 
     memory '5 GB'
     time '5m'
@@ -62,7 +62,7 @@ process CleanBam {
     tuple val(id), path(bam)
 
     output:
-    tuple val(id), path("*")
+    tuple val(id), path("cleaned.bam")
 
     script:
     """
@@ -71,7 +71,7 @@ process CleanBam {
 }
 
 process MarkDuplicates {
-    tag "${id.sample}"
+    tag "${id}"
 
     memory '25 GB'
     time '5m'
@@ -80,7 +80,7 @@ process MarkDuplicates {
     tuple val(id), path(bam)
 
     output:
-    tuple val(id), path("*.bam")
+    tuple val(id), path("marked_duplicates.bam")
 
     script:
     """
@@ -89,7 +89,7 @@ process MarkDuplicates {
 }
 
 process BaseRecalibrator {
-    tag "${id.sample}"
+    tag "${id}"
 
     memory '5 GB'
     time '5m'
@@ -98,7 +98,7 @@ process BaseRecalibrator {
     tuple val(id), path(bam), path(reference), path(ref_idx), path(dict_idx), path(known_sites), path(feature_idx)
 
     output:
-    tuple val(id), path("*")
+    tuple val(id), path("recalibration_report.txt")
 
     script:
     """
@@ -107,7 +107,7 @@ process BaseRecalibrator {
 }
 
 process ApplyBQSR {
-    tag "${id.sample}"
+    tag "${id}"
 
     memory '5 GB'
     time '5m'
@@ -116,8 +116,7 @@ process ApplyBQSR {
     tuple val(id), path(bam), path(recalibration)
 
     output:
-    tuple val(id), path("*.bam"), emit: bam
-    tuple val(id), path("*.bai"), emit: bai
+    tuple val(id), path("bqsr.bam")
 
     script:
     """

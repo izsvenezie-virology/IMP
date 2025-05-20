@@ -9,7 +9,7 @@ process GetReference {
     path db_fasta
 
     output:
-    tuple val(id), path('*')
+    tuple val(id), path('reference.fa')
 
     script:
     """

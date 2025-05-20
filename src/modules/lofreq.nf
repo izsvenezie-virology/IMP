@@ -1,5 +1,5 @@
 process Viterbi {
-    tag "${id.sample}"
+    tag "${id}"
 
     memory '500 MB'
     time '5m'
@@ -17,7 +17,7 @@ process Viterbi {
 }
 
 process Call {
-    tag "${id.sample}"
+    tag "${id}"
     label 'multiThread'
 
     memory '5 GB'
@@ -39,7 +39,7 @@ process Call {
 }
 
 process IndelQual {
-    tag "${id.sample}"
+    tag "${id}"
 
     memory '500 MB'
     time '5m'
@@ -48,7 +48,7 @@ process IndelQual {
     tuple val(id), path(bam), path(reference)
 
     output:
-    tuple val(id), path("*.bam")
+    tuple val(id), path("indelqual.bam")
 
     script:
     """

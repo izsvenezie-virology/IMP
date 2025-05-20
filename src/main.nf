@@ -142,7 +142,7 @@ workflow {
             [
                 it.Sample,
                 [
-                    id: [sample: it.Sample, reference: reference],
+                    id: "${it.Sample}__${reference}",
                     sample: it.Sample,
                     name: it.Name,
                     primers: primers,
@@ -216,10 +216,7 @@ workflow {
         | mix(ref_collect.RefProvided)
         | unique
         | PrepareReference
-
-    PrepareReference.out
         | set { References }
-    // set channel
 
     // Reference index processes
     BWAIndex(References)
@@ -246,8 +243,10 @@ workflow {
 
     CleanBam(FixBam.out)
 
-    CleanBam.out
-        | map { [it[0].reference] + it }
+    metadata_ch
+        | map { [it[1].id, it[1].reference, it[1].id] }
+        | combine(CleanBam.out, by: 0)
+        | map { it.tail() }
         | combine(References, by: 0)
         | combine(BWAIndex.out, by: 0)
         | map { it.tail() }
@@ -259,9 +258,11 @@ workflow {
 
     MDBamIndex(MarkDuplicates.out, false)
 
-    MarkDuplicates.out
+    metadata_ch
+        | map { [it[1].id, it[1].reference, it[1].id] }
+        | combine(MarkDuplicates.out, by: 0)
         | combine(MDBamIndex.out, by: 0)
-        | map { [it[0].reference] + it }
+        | map { it.tail() }
         | combine(References, by: 0)
         | combine(FaidxIndex.out, by: 0)
         | map { it.tail() }
@@ -271,8 +272,10 @@ workflow {
 
     IndexFeatureFile(FakeVariantCall.out)
 
-    MarkDuplicates.out
-        | map { [it[0].reference] + it }
+    metadata_ch
+        | map { [it[1].id, it[1].reference, it[1].id] }
+        | combine(MarkDuplicates.out, by: 0)
+        | map { it.tail() }
         | combine(References, by: 0)
         | combine(FaidxIndex.out, by: 0)
         | combine(DictIndex.out, by: 0)
@@ -285,17 +288,21 @@ workflow {
         | combine(BaseRecalibrator.out, by: 0)
         | ApplyBQSR
 
-    ApplyBQSR.out.bam
-        | map { [it[0].reference] + it }
+    metadata_ch
+        | map { [it[1].id, it[1].reference, it[1].id] }
+        | combine(ApplyBQSR.out, by: 0)
+        | map { it.tail() }
         | combine(References, by: 0)
         | map { it.tail() }
         | IndelQual
 
     IQBamIndex(IndelQual.out, false)
 
-    IndelQual.out
+    metadata_ch
+        | map { [it[1].id, it[1].reference, it[1].id] }
+        | combine(IndelQual.out, by: 0)
         | combine(IQBamIndex.out, by: 0)
-        | map { [it[0].reference] + it }
+        | map { it.tail() }
         | combine(References, by: 0)
         | combine(FaidxIndex.out, by: 0)
         | map { it.tail() }
@@ -378,48 +385,40 @@ output {
     }
     bwa {
         path { sample ->
-            sample[1] >> "alignments/${sample[0].sample}__${sample[0].reference}.bam"
+            sample[1] >> "alignments/${sample[0]}.bam"
         }
     }
     bwa_index {
         path { sample ->
-            sample[1] >> "alignments/${sample[0].sample}__${sample[0].reference}.bam.bai"
+            sample[1] >> "alignments/${sample[0]}.bam.bai"
         }
     }
     coverage {
         path { sample ->
-            sample[1] >> "coverage/raw/${sample[0].sample}__${sample[0].reference}_coverage.tsv"
+            sample[1] >> "coverage/raw/${sample[0]}_coverage.tsv"
         }
     }
     tacos {
         path { sample ->
-            sample[1] >> "coverage/${sample[0].sample}__${sample[0].reference}_coverage.pdf"
+            sample[1] >> "coverage/${sample[0]}_coverage.pdf"
         }
     }
     vcfs {
         path { sample ->
-            sample[1] >> "vcfs/${sample[0].sample}__${sample[0].reference}.vcf"
+            sample[1] >> "vcfs/${sample[0]}.vcf"
         }
     }
     consensus_deg {
-        path { sample ->
-            sample[1] >> "consensus/${sample[0].sample}__${sample[0].reference}.fa"
-        }
+        path "consensus/"
     }
     consensus_undeg {
-        path { sample ->
-            sample[1] >> "consensus/undegenerated/${sample[0].sample}__${sample[0].reference}.fa"
-        }
+        path "consensus/unambiguous/"
     }
     conensus_segments_deg {
-        path { sample ->
-            sample[1] >> "consensus/segments/${sample[0].sample}__${sample[0].reference}.fa"
-        }
+        path "consensus/segments/"
     }
     consensus_segments_undeg {
-        path { sample ->
-            sample[1] >> "consensus/undegenerated/segments/${sample[0].sample}__${sample[0].reference}.fa"
-        }
+        path "consensus/unambiguous/segments/"
     }
     results {
         path "results/"

@@ -17,7 +17,7 @@ process FaidxIndex {
 }
 
 process Sort {
-    tag "${id.sample}"
+    tag "${id}"
 
     memory '5 GB'
     time '5m'
@@ -26,7 +26,7 @@ process Sort {
     tuple val(id), path(bam)
 
     output:
-    tuple val(id), path('*')
+    tuple val(id), path("sorted.bam")
 
     script:
     """
@@ -35,7 +35,7 @@ process Sort {
 }
 
 process BamIndex {
-    tag "${id.sample}"
+    tag "${id}"
 
     memory '500 MB'
     time '30s'
@@ -45,7 +45,7 @@ process BamIndex {
     val publish
 
     output:
-    tuple val(id), path('*')
+    tuple val(id), path("*.bai")
 
     script:
     """

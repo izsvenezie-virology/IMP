@@ -1,5 +1,5 @@
 process Consenser {
-    tag "${id.sample}"
+    tag "${id}"
 
     memory '500 MB'
     time '30s'
@@ -9,13 +9,13 @@ process Consenser {
     val degenerated
 
     output:
-    tuple val(id), path("${id.sample}__${id.reference}.fa"), emit: consensus
-    tuple val(id), path("${id.sample}__${id.reference}_*.fa"), emit: segments
+    tuple val(id), path("${id}.fa"), emit: consensus
+    tuple val(id), path("${id}_*.fa"), emit: segments
 
     script:
     def deg_option = degenerated ? '-d' : ''
     """
-    consenser --force ${deg_option} -s ${id.sample}__${id.reference}_CHROMNAME.fa \
-    -a '${parameters.name}' -o ${id.sample}__${id.reference}.fa -c ${coverage} ${reference} ${vcf}
+    consenser --force ${deg_option} -s ${id}_CHROMNAME.fa \
+    -a '${parameters.name}' -o ${id}.fa -c ${coverage} ${reference} ${vcf}
     """
 }

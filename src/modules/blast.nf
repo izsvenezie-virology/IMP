@@ -10,7 +10,7 @@ process BlastN {
     tuple val(db_name), path(db)
 
     output:
-    tuple val(id), path('*')
+    tuple val(id), path('best_hits.tsv')
 
     script:
     """
@@ -32,7 +32,7 @@ process MakeBlastDb {
     val enabled
 
     output:
-    tuple val('blastdb'), path('*')
+    tuple val('blastdb'), path('blastdb*')
 
     when:
     enabled != false

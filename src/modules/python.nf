@@ -8,7 +8,7 @@ process GetReferenceNames {
     tuple val(id), path(best_hits)
 
     output:
-    tuple val(id), path('*')
+    tuple val(id), path("ref_names.txt")
 
     script:
     """
@@ -26,7 +26,7 @@ process CreateCutadaptPrimers {
     tuple val(id), path(primers_tsv)
 
     output:
-    tuple val(id), path('*')
+    tuple val(id), path("primers_??.fa")
 
     script:
     """
@@ -44,7 +44,7 @@ process PrepareReference {
     tuple val(id), path(reference)
 
     output:
-    tuple val(id), path('*')
+    tuple val(id), path("reference.fa")
 
     script:
     """
@@ -53,7 +53,7 @@ process PrepareReference {
 }
 
 process FindSubtypes {
-    tag "${id.sample}_${id.reference}"
+    tag "${id}"
 
     memory '500 MB'
     time '30s'
@@ -62,10 +62,10 @@ process FindSubtypes {
     tuple val(id), path(coverage)
 
     output:
-    tuple val(id), path('*')
+    tuple val(id), path("alignment_stats.tsv")
 
     script:
     """
-    find_subtypes.py ${id.sample} ${coverage} >alignment_stats.tsv
+    find_subtypes.py ${id} ${coverage} >alignment_stats.tsv
     """
 }

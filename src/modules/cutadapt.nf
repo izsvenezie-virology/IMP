@@ -10,7 +10,7 @@ process Cutadapt {
     path adapters
 
     output:
-    tuple val(id), path('*_clean.fastq.gz')
+    tuple val(id), path('reads_R?_clean.fastq.gz')
 
     script:
     def phred_threshold = parameters.phred_threshold ?: 20

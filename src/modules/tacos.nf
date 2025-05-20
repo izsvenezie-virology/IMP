@@ -1,5 +1,5 @@
 process Tacos {
-    tag "${id.sample}"
+    tag "${id}"
     errorStrategy 'ignore'
 
     memory '1 GB'
@@ -9,7 +9,7 @@ process Tacos {
     tuple val(id), path(coverage)
 
     output:
-    tuple val(id), path('*')
+    tuple val(id), path("coverage.pdf")
 
     script:
     """

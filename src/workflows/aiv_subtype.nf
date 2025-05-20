@@ -28,13 +28,13 @@ workflow AIVSubtype {
 
     samples_ch
         | combine(indexed_references_ch)
-        | map { [[sample: it[0], reference: it[2]], it[1], it[3], it[4]] }
+        | map { [it[0], it[1], it[3], it[4]] }
         | BWAMem
 
     BWAMem.out
         | GenomeCov
         | FindSubtypes
-        | map { [it[0].sample, it[1]] }
+        | map { [it[0], it[1]] }
         | groupTuple
         | set { result_ch }
 

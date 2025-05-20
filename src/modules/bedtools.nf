@@ -1,5 +1,5 @@
 process GenomeCov {
-    tag "${id.sample}"
+    tag "${id}"
 
     memory '500 MB'
     time '30s'
@@ -8,7 +8,7 @@ process GenomeCov {
     tuple val(id), path(bam)
 
     output:
-    tuple val(id), path('*')
+    tuple val(id), path('coverage.tsv')
 
     script:
     """

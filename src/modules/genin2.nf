@@ -25,7 +25,7 @@ process Genin2 {
     val updated
 
     output:
-    tuple val(id), path('*'), topic: 'results'
+    tuple val(id), path("${id}_genin2.tsv"), topic: 'results'
 
     script:
     """

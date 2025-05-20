@@ -1,5 +1,5 @@
 process BWAMem {
-    tag "${id.sample}"
+    tag "${id}"
     label 'multiThread'
 
     memory '10 GB'
@@ -9,11 +9,11 @@ process BWAMem {
     tuple val(id), path(reads), path(reference), path(index)
 
     output:
-    tuple val(id), path('*')
+    tuple val(id), path('sorted.bam')
 
     script:
     """
-    bwa mem -t ${task.cpus} -R '@RG\\tID:${id.sample}\\tSM:${id.sample}\\tPL:ILLUMINA' -M ${reference} ${reads} |
+    bwa mem -t ${task.cpus} -R '@RG\\tID:${id}\\tSM:${id}\\tPL:ILLUMINA' -M ${reference} ${reads} |
         samtools sort -@ ${task.cpus} -O bam -o sorted.bam
     """
 }
@@ -28,7 +28,7 @@ process BWAIndex {
     tuple val(id), path(reference)
 
     output:
-    tuple val(id), path('*')
+    tuple val(id), path("${reference}*")
 
     script:
     """
