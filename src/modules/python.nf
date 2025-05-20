@@ -44,11 +44,11 @@ process PrepareReference {
     tuple val(id), path(reference)
 
     output:
-    tuple val(id), path("reference.fa")
+    tuple val(id), path("cleaned_reference.fa")
 
     script:
     """
-    prepare_reference.py ${reference} >reference.fa
+    prepare_reference.py ${reference} >cleaned_reference.fa
     """
 }
 
