@@ -131,12 +131,12 @@ workflow {
 
     // Samples channels creation
     Channel.fromFilePairs("${params.raw_reads_folder}/*_R{1,2}*fastq.gz")
-        | map { [it[0].split("_S")[0], it[1]] }
+        | map { it -> [it[0].split("_S")[0], it[1]] }
         | set { raw_reads }
 
     Channel.fromPath(params.samples_metadata)
         | splitCsv(header: true, sep: '\t')
-        | map {
+        | map { it ->
             def reference = it.Reference ? file(it.Reference).simpleName : "${it.Sample}_ref"
             def primers = it.Primers ? file(it.Primers).simpleName : file(params.null_file).simpleName
             [
@@ -171,16 +171,16 @@ workflow {
     // Clean reads
     raw_reads
         | join(metadata_ch)
-        | map { [it[2].primers, it[2].sample, [it[2].minQual, it[2].minLen], it[1]] }
+        | map { it -> [it[2].primers, it[2].sample, [it[2].minQual, it[2].minLen], it[1]] }
         | combine(CreateCutadaptPrimers.out, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | set { to_cutadapt_ch }
     Cutadapt(to_cutadapt_ch, adapters)
 
     // Assess reads quality
     raw_reads
         | join(metadata_ch)
-        | map { [it[0], it[1]] }
+        | map { it -> [it[0], it[1]] }
         | set { to_fastqcraw_ch }
 
     FastQCRaw(to_fastqcraw_ch, 'raw')
@@ -201,7 +201,7 @@ workflow {
     ref_collect.FindRef
         | first
         | ifEmpty(false)
-        | map { it ? true : false }
+        | map { it -> it ? true : false }
         | set { build_blast_db }
     MakeBlastDb(references_db, build_blast_db)
     // create blastDB only if at least one reference must be found
@@ -212,7 +212,7 @@ workflow {
 
     // References channel creation
     GetReference.out
-        | filter { !it[1].isEmpty() }
+        | filter { it -> !it[1].isEmpty() }
         | mix(ref_collect.RefProvided)
         | unique
         | PrepareReference
@@ -225,12 +225,12 @@ workflow {
 
     // Reads alignment
     metadata_ch
-        | map { [it[1].sample, it[1].reference, it[1].id] }
+        | map { it -> [it[1].sample, it[1].reference, it[1].id] }
         | combine(Cutadapt.out, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | combine(References, by: 0)
         | combine(BWAIndex.out, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | BWAMem
 
     BamIndex(BWAMem.out, true)
@@ -244,12 +244,12 @@ workflow {
     CleanBam(FixBam.out)
 
     metadata_ch
-        | map { [it[1].id, it[1].reference, it[1].id] }
+        | map { it -> [it[1].id, it[1].reference, it[1].id] }
         | combine(CleanBam.out, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | combine(References, by: 0)
         | combine(BWAIndex.out, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | Viterbi
 
     MDSort(Viterbi.out)
@@ -259,13 +259,13 @@ workflow {
     MDBamIndex(MarkDuplicates.out, false)
 
     metadata_ch
-        | map { [it[1].id, it[1].reference, it[1].id] }
+        | map { it -> [it[1].id, it[1].reference, it[1].id] }
         | combine(MarkDuplicates.out, by: 0)
         | combine(MDBamIndex.out, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | combine(References, by: 0)
         | combine(FaidxIndex.out, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | set { md_reference }
     // set channel
     FakeVariantCall(md_reference, false)
@@ -273,13 +273,13 @@ workflow {
     IndexFeatureFile(FakeVariantCall.out)
 
     metadata_ch
-        | map { [it[1].id, it[1].reference, it[1].id] }
+        | map { it -> [it[1].id, it[1].reference, it[1].id] }
         | combine(MarkDuplicates.out, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | combine(References, by: 0)
         | combine(FaidxIndex.out, by: 0)
         | combine(DictIndex.out, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | combine(FakeVariantCall.out, by: 0)
         | combine(IndexFeatureFile.out, by: 0)
         | BaseRecalibrator
@@ -289,35 +289,35 @@ workflow {
         | ApplyBQSR
 
     metadata_ch
-        | map { [it[1].id, it[1].reference, it[1].id] }
+        | map { it -> [it[1].id, it[1].reference, it[1].id] }
         | combine(ApplyBQSR.out, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | combine(References, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | IndelQual
 
     IQBamIndex(IndelQual.out, false)
 
     metadata_ch
-        | map { [it[1].id, it[1].reference, it[1].id] }
+        | map { it -> [it[1].id, it[1].reference, it[1].id] }
         | combine(IndelQual.out, by: 0)
         | combine(IQBamIndex.out, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | combine(References, by: 0)
         | combine(FaidxIndex.out, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | set { to_variantcall_ch }
     // set channel
     VariantCall(to_variantcall_ch, true)
 
     // Create consensuses
     metadata_ch
-        | map { [it[1].id, it[1].reference, it[1].id, [name: it[1].name]] }
+        | map { it -> [it[1].id, it[1].reference, it[1].id, [name: it[1].name]] }
         | combine(VariantCall.out, by: 0)
         | combine(GenomeCov.out, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | combine(References, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | set { vcf_coverage_reference }
     // set channel
     DegeneratedConsensus(vcf_coverage_reference, true)
@@ -326,13 +326,13 @@ workflow {
     metadata_ch
         | map { [it[1].id, it[1].group] }
         | combine(DegeneratedConsensus.out.consensus, by: 0)
-        | map { it.tail() }
+        | map { it -> it.tail() }
         | groupTuple(by: 0)
         | CC_group
 
     if (params.virus == 'AIV') {
         AIVSubtype(Cutadapt.out)
-            | map { [it[1]] }
+            | map { it -> [it[1]] }
             | flatten
             | collectFile(name: 'subtypes.tsv', sort: { file -> file.text }, storeDir: 'results')
 
