@@ -25,16 +25,13 @@ process Call {
 
     input:
     tuple val(id), path(bam), path(bam_index), path(reference), path(reference_index)
-    val call_indels
 
     output:
     tuple val(id), path("variants.vcf")
 
     script:
-    def call_indels_opt = call_indels ? '--call-indels' : ''
-    // If call indels is true the call indels option is set
     """
-    lofreq call-parallel --pp-threads ${task.cpus} -f ${reference} -o variants.vcf ${bam} ${call_indels_opt}
+    lofreq call-parallel --call-indels --pp-threads ${task.cpus} -f ${reference} -o variants.vcf ${bam}
     """
 }
 

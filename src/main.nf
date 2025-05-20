@@ -266,9 +266,7 @@ workflow {
         | combine(References, by: 0)
         | combine(FaidxIndex.out, by: 0)
         | map { it -> it.tail() }
-        | set { md_reference }
-    // set channel
-    FakeVariantCall(md_reference, false)
+        | FakeVariantCall
 
     IndexFeatureFile(FakeVariantCall.out)
 
@@ -306,9 +304,7 @@ workflow {
         | combine(References, by: 0)
         | combine(FaidxIndex.out, by: 0)
         | map { it -> it.tail() }
-        | set { to_variantcall_ch }
-    // set channel
-    VariantCall(to_variantcall_ch, true)
+        | VariantCall
 
     // Create consensuses
     metadata_ch
@@ -319,7 +315,6 @@ workflow {
         | combine(References, by: 0)
         | map { it -> it.tail() }
         | set { vcf_coverage_reference }
-    // set channel
     DegeneratedConsensus(vcf_coverage_reference, true)
     NonDegeneratedConsensus(vcf_coverage_reference, false)
 
