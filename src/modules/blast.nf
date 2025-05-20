@@ -29,13 +29,9 @@ process MakeBlastDb {
 
     input:
     path references_fasta
-    val enabled
 
     output:
     tuple val('blastdb'), path('blastdb*')
-
-    when:
-    enabled != false
 
     script:
     """

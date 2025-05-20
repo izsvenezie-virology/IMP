@@ -186,26 +186,23 @@ workflow {
 
     // References collection channel creation
     metadata_ch
-        | map { meta -> [meta.sample, meta] }
-        | combine(Cutadapt.out, by: 0)
-        | map { it -> it.tail() }
-        | branch {
-            FindRef: it[0].reference_file == ''
-            return [it[0].reference, it[0].subset ?: 1, it[1]]
-            RefProvided: true
-            return [it[0].reference, file(it[0].reference_file, checkIfExists: true)]
-        }
-        | set { ref_collect }
+        | filter { meta -> meta.reference_file != '' }
+        | map { meta -> [meta.reference, file(meta.reference_file, checkIfExists: true)] }
+        | set { provided_references }
 
     // Find missing references
-    ref_collect.FindRef
+    metadata_ch
+        | filter { meta -> meta.reference_file == '' }
         | first
-        | ifEmpty(false)
-        | map { it -> it ? true : false }
-        | set { build_blast_db }
+        | map { references_db }
+        | MakeBlastDb
     // create blastDB only if at least one reference must be found
-    MakeBlastDb(references_db, build_blast_db)
-    FastqToFasta(ref_collect.FindRef)
+    metadata_ch
+        | filter { meta -> meta.reference_file == '' }
+        | map { meta -> [meta.sample, meta.reference, meta.subset] }
+        | combine(Cutadapt.out, by: 0)
+        | map { it -> it.tail() }
+        | FastqToFasta
     BlastN(FastqToFasta.out, MakeBlastDb.out)
     GetReferenceNames(BlastN.out)
     GetReference(GetReferenceNames.out, references_db)
@@ -213,7 +210,7 @@ workflow {
     // References channel creation
     GetReference.out
         | filter { it -> !it[1].isEmpty() }
-        | mix(ref_collect.RefProvided)
+        | mix(provided_references)
         | unique
         | PrepareReference
         | set { References }
