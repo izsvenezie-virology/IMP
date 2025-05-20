@@ -167,7 +167,7 @@ workflow {
 
     // Clean reads
     metadata_ch
-        | map { meta -> [meta.sample, meta.primers, meta.sample, [meta.minQual, meta.minLen]] }
+        | map { meta -> [meta.sample, meta.primers, meta.sample, [phred_threshold: meta.minQual, min_len: meta.minLen]] }
         | combine(raw_reads, by: 0)
         | map { it -> it.tail() }
         | combine(CreateCutadaptPrimers.out, by: 0)
