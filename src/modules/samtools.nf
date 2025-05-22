@@ -42,7 +42,6 @@ process BamIndex {
 
     input:
     tuple val(id), path(bam)
-    val publish
 
     output:
     tuple val(id), path("*.bai")

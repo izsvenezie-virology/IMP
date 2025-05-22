@@ -236,8 +236,7 @@ workflow {
         | combine(BWAIndex.out, by: 0)
         | map { it -> it.tail() }
         | BWAMem
-
-    BamIndex(BWAMem.out, true)
+        | BamIndex
 
     GenomeCov(BWAMem.out)
         | Tacos
@@ -259,8 +258,7 @@ workflow {
     MDSort(Viterbi.out)
 
     MarkDuplicates(MDSort.out)
-
-    MDBamIndex(MarkDuplicates.out, false)
+        | MDBamIndex
 
     metadata_ch
         | map { meta -> [meta.id, meta.reference, meta.id] }
@@ -297,8 +295,7 @@ workflow {
         | combine(References, by: 0)
         | map { it -> it.tail() }
         | IndelQual
-
-    IQBamIndex(IndelQual.out, false)
+        | IQBamIndex
 
     metadata_ch
         | map { meta -> [meta.id, meta.reference, meta.id] }
