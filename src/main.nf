@@ -136,32 +136,33 @@ workflow {
 
     Channel.fromPath(params.samples_metadata)
         | splitCsv(header: true, sep: '\t')
-        | map { it ->
-            def reference = it.Reference ? file(it.Reference).simpleName : "${it.Sample}_ref"
-            def primers = it.Primers ? file(it.Primers).simpleName : file(params.null_file).simpleName
-            [
-                id: "${it.Sample}__${reference}",
+        | multiMap { it ->
+            // If a reference is not provided set the file to null, create a custom id and set the subset > 0.
+            // If a reference is provided and the file exists use it and set the simpleName as ID. The subset must be null.
+            // Else if the file does not exists set the file to null and use the simpleName as ID. The subset must be null.
+            def reference_file = file(it.Reference ?: 'non_existing_file').exists() ? file(it.Reference) : null
+            def reference_id = it.Reference ? file(it.Reference).simpleName : "${it.Sample}_ref"
+
+            def subset = it.Reference ? null : it.Subset ?: 0.2
+
+            def primers_file = file(it.Primers ?: params.null_file, checkIfExists: true)
+            def primers_id = primers_file.simpleName
+            metadata: [
+                id: "${it.Sample}__${reference_id}",
                 sample: it.Sample,
                 name: it.Name,
-                primers: primers,
-                primers_file: it.Primers,
-                reference: reference,
-                reference_file: it.Reference,
-                subset: it.Subset,
+                primers: primers_id,
+                reference: reference_id,
+                subset: subset,
                 group: it.Group,
             ]
+            primers: [primers_id, primers_file]
+            references: [reference_id, reference_file]
         }
-        | set { metadata_ch }
+        | set { samples_config_ch }
 
-    metadata_ch
-        | map { meta ->
-            if (meta.primers_file) {
-                [meta.primers, file(meta.primers_file, checkIfExists: true)]
-            }
-            else {
-                [meta.primers, file(params.null_file, checkIfExists: true)]
-            }
-        }
+    metadata_ch = samples_config_ch.metadata
+    samples_config_ch.primers
         | unique
         | CreateCutadaptPrimers
 
@@ -185,20 +186,19 @@ workflow {
     FastQCClean(Cutadapt.out, 'clean')
 
     // References collection channel creation
-    metadata_ch
-        | filter { meta -> meta.reference_file != '' }
-        | map { meta -> [meta.reference, file(meta.reference_file, checkIfExists: true)] }
+    samples_config_ch.references
+        | filter { it -> it[1] }
         | set { provided_references }
 
     // Find missing references
     metadata_ch
-        | filter { meta -> meta.reference_file == '' }
+        | filter { it -> it.subset }
         | first
         | map { references_db }
         | MakeBlastDb
     // create blastDB only if at least one reference must be found
     metadata_ch
-        | filter { meta -> meta.reference_file == '' }
+        | filter { it -> it.subset }
         | map { meta -> [meta.sample, meta.reference, meta.subset] }
         | combine(Cutadapt.out, by: 0)
         | map { it -> it.tail() }
@@ -206,6 +206,11 @@ workflow {
     BlastN(FastqToFasta.out, MakeBlastDb.out)
     GetReferenceNames(BlastN.out)
     GetReference(GetReferenceNames.out, references_db)
+
+    // Alert if some references are empty
+    GetReference.out
+        | filter { it -> it[1].isEmpty() }
+        | collectFile(storeDir: 'warnings') { it -> ['empty_references.txt', "${it[0]}\t${it[1]}\n"] }
 
     // References channel creation
     GetReference.out
