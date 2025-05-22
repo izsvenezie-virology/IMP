@@ -3,7 +3,7 @@
 # This script apply following changes to reference:
 # - Remove degenerations
 # - Remove gaps
-# - Remove spaces from FASTA headers
+# - Remove spaces and forbidden characters from FASTA headers
 # - Writes sequences on one line
 # - Set new line to LF
 # - Sequences to uppercase
@@ -33,6 +33,23 @@ def remove_degenerations(sequence):
     return ''.join(seq)
     
 
+def format_header(header):
+    h = header[1:].strip()
+    h = h.replace(' ', '_')
+    h = h.replace('/', '_')
+    h = h.replace('\\', '_')
+    h = h.replace('<', '_')
+    h = h.replace('>', '_')
+    h = h.replace('.', '_')
+    h = h.replace(',', '_')
+    h = h.replace(':', '_')
+    h = h.replace(';', '_')
+    h = h.replace('"', '_')
+    h = h.replace('|', '_')
+    h = h.replace('?', '_')
+    h = h.replace('*', '_')
+    return f'>{h}'
+
 input_fasta = sys.argv[1]
 
 sequence = ''
@@ -43,7 +60,7 @@ with open(input_fasta, 'r') as f:
             if sequence:
                 print(remove_degenerations(sequence), end='\n')
                 sequence = ''
-            print(line.strip().replace(' ', '_'), end='\n')
+            print(format_header(line), end='\n')
             continue
         sequence += line.strip().upper()
 print(remove_degenerations(sequence), end='\n')
