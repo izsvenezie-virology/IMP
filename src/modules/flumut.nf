@@ -1,11 +1,11 @@
-process UpdateFluMut{
+process UpdateFluMut {
     tag "FluMutDB"
 
     memory '500 MB'
     time '5m'
 
     output:
-        val 'true'
+    val 'true'
 
     script:
     """
@@ -14,20 +14,21 @@ process UpdateFluMut{
 }
 
 
-process FluMut{
-    tag "$id"
-    publishDir "results", mode: 'copy'
+process FluMut {
+    tag "${id}"
 
     memory '2 GB'
     time '30m'
 
     input:
-        tuple val(id), path(fasta)
-        val(updated)
+    tuple val(id), path(fasta)
+    val updated
+
     output:
-        tuple val(id), path('*')
-    
+    tuple val(id), path("${id}_flumut.xlsm"), topic: 'results'
+
+    script:
     """
-    flumut -x ${id}_flumut.xlsm $fasta
+    flumut -x ${id}_flumut.xlsm ${fasta}
     """
 }
