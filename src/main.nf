@@ -173,12 +173,14 @@ workflow {
         | map { it -> it.tail() }
         | combine(CreateCutadaptPrimers.out, by: 0)
         | map { it -> it.tail() }
+        | unique
         | set { to_cutadapt_ch }
     Cutadapt(to_cutadapt_ch, adapters)
 
     metadata_ch
         | map { meta -> [meta.sample] }
         | combine(raw_reads, by: 0)
+        | unique
         | set { to_fastqc_raw_ch }
 
     // Reads quality assesment
