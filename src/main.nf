@@ -155,6 +155,7 @@ workflow {
                 reference: reference_id,
                 subset: subset,
                 group: it.Group,
+                minimum_coverage: it.MinimumCoverage ?: 20,
             ]
             primers: [primers_id, primers_file]
             references: [reference_id, reference_file]
@@ -309,7 +310,7 @@ workflow {
 
     // Create consensuses
     metadata_ch
-        | map { meta -> [meta.id, meta.reference, meta.id, [name: meta.name]] }
+        | map { meta -> [meta.id, meta.reference, meta.id, [name: meta.name, minimum_coverage: meta.minimum_coverage]] }
         | combine(VariantCall.out, by: 0)
         | combine(GenomeCov.out, by: 0)
         | map { it -> it.tail() }

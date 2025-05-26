@@ -16,6 +16,6 @@ process Consenser {
     def deg_option = degenerated ? '-d' : ''
     """
     consenser --force ${deg_option} -s ${id}_CHROMNAME.fa \
-    -a '${parameters.name}' -o ${id}.fa -c ${coverage} ${reference} ${vcf}
+    -a '${parameters.name}' --min-cov ${parameters.minimum_coverage} -o ${id}.fa -c ${coverage} ${reference} ${vcf}
     """
 }
