@@ -145,15 +145,15 @@ workflow {
         | splitCsv(header: true, sep: '\t')
         | multiMap { it ->
             // If a reference is not provided set the file to null, create a custom id and set the subset > 0.
-            // If a reference is provided and the file exists use it and set the simpleName as ID. The subset must be null.
-            // Else if the file does not exists set the file to null and use the simpleName as ID. The subset must be null.
+            // If a reference is provided and the file exists use it and set the.baseName as ID. The subset must be null.
+            // Else if the file does not exists set the file to null and use the.baseName as ID. The subset must be null.
             def reference_file = file(it.Reference ?: 'non_existing_file').exists() ? file(it.Reference) : null
-            def reference_id = it.Reference ? file(it.Reference).simpleName : "${it.Sample}_ref"
+            def reference_id = it.Reference ? file(it.Reference).baseName : "${it.Sample}_ref"
 
             def subset = it.Reference ? null : it.Subset ?: 0.2
 
             def primers_file = file(it.Primers ?: params.null_file, checkIfExists: true)
-            def primers_id = primers_file.simpleName
+            def primers_id = primers_file.baseName
             metadata: [
                 id: "${it.Sample}__${reference_id}",
                 sample: it.Sample,
@@ -168,6 +168,7 @@ workflow {
             references: [reference_id, reference_file]
         }
         | set { samples_config_ch }
+    samples_config_ch.metadata.view()
 
     metadata_ch = samples_config_ch.metadata
     samples_config_ch.primers
