@@ -168,7 +168,6 @@ workflow {
             references: [reference_id, reference_file]
         }
         | set { samples_config_ch }
-    samples_config_ch.metadata.view()
 
     metadata_ch = samples_config_ch.metadata
     samples_config_ch.primers
@@ -370,7 +369,7 @@ workflow {
     publish:
     fastqc = Channel.topic('reads_quality')
     cutadapt = Cutadapt.out
-    reference = GetReference.out
+    reference = PrepareReference.out
     bwa = BWAMem.out
     bwa_index = BamIndex.out
     coverage = GenomeCov.out
@@ -399,7 +398,7 @@ output {
     }
     reference {
         path { sample ->
-            sample[1] >> "refs/${sample[0]}.fa"
+            sample[1] >> "references/${sample[0]}.fa"
         }
     }
     bwa {
