@@ -71,12 +71,9 @@ include {
     Tacos
 } from './modules/tacos.nf'
 include {
-    MappedCount ;
-    UnmappedCount
-} from './modules/statistics/alignment.nf'
-include {
-    CoverageStats
-} from './modules/statistics/coverage.nf'
+    CoverageStats ;
+    AlignmentStats
+} from './modules/statistics/python.nf'
 
 include {
     AIVSubtype
@@ -246,17 +243,16 @@ workflow {
         | BWAMem
         | BamIndex
 
+    BWAMem.out
+        | AlignmentStats
+
     GenomeCov(BWAMem.out)
         | Tacos
-
-    MappedCount(BWAMem.out)
-    UnmappedCount(BWAMem.out)
 
     metadata_ch
         | map { meta -> [meta.id, meta.minimum_coverage] }
         | combine(GenomeCov.out, by: 0)
         | CoverageStats
-
 
     // GATK best practices
     FixBam(BWAMem.out)
@@ -361,10 +357,10 @@ workflow {
         Genin2(CC_run.out, UpdateGenin2.out)
     }
 
-    Channel.topic('alignment_stats')
+    Channel.topic('statistics')
         | map { it -> [it[1]] }
         | flatten
-        | collectFile(name: 'alignment_stats.tsv', storeDir: 'results')
+        | collectFile(name: 'statistics.tsv', storeDir: 'results')
 
     publish:
     fastqc = Channel.topic('reads_quality')
