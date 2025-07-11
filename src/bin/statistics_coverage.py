@@ -15,11 +15,6 @@ with open(coverage_file, 'r') as f:
         coverages['Total'].append(int(coverage))
         coverages[chrom].append(int(coverage))
 
-if len(coverages) == 2:
-    total = coverages['Total']
-    coverages.clear()
-    coverages['Total'] = total
-
 for chrom, covs in coverages.items():
     mean_cov = mean(covs)
     print(f'{sample_id}\t{chrom}\tMean coverage\t{mean_cov:.2f}')

@@ -66,7 +66,8 @@ include {
     ReadsStats as ReadsStatsRaw ;
     ReadsStats as ReadsStatsClean ;
     CoverageStats ;
-    AlignmentStats
+    AlignmentStats ;
+    VariantsStats
 } from './modules/statistics/python.nf'
 
 include {
@@ -324,6 +325,11 @@ workflow {
         | combine(FaidxIndex.out, by: 0)
         | map { it -> it.tail() }
         | VariantCall
+
+    metadata_ch
+        | map { meta -> [meta.id, meta.minimum_coverage] }
+        | combine(VariantCall.out, by: 0)
+        | VariantsStats
 
     // Create consensuses
     metadata_ch
