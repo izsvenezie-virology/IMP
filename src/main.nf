@@ -30,10 +30,6 @@ include {
     FastQC as FastQCClean
 } from './modules/fastqc.nf'
 include {
-    UpdateFluMut ;
-    FluMut
-} from './modules/flumut.nf'
-include {
     DictIndex ;
     FixBam ;
     CleanBam ;
@@ -42,10 +38,6 @@ include {
     IndexFeatureFile ;
     ApplyBQSR
 } from './modules/gatk.nf'
-include {
-    UpdateGenin2 ;
-    Genin2
-} from './modules/genin2.nf'
 include {
     Viterbi ;
     Call as FakeVariantCall ;
@@ -77,6 +69,14 @@ include {
     AlignmentStats
 } from './modules/statistics/python.nf'
 
+include {
+    UpdateFluMut ;
+    FluMut
+} from './modules/aiv/flumut.nf'
+include {
+    UpdateGenin2 ;
+    Genin2
+} from './modules/aiv/genin2.nf'
 include {
     AIVSubtype
 } from './workflows/aiv_subtype.nf'
