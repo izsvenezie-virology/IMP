@@ -71,6 +71,8 @@ include {
     Tacos
 } from './modules/tacos.nf'
 include {
+    ReadsStats as ReadsStatsRaw ;
+    ReadsStats as ReadsStatsClean ;
     CoverageStats ;
     AlignmentStats
 } from './modules/statistics/python.nf'
@@ -191,6 +193,9 @@ workflow {
     // Reads quality assesment
     FastQCRaw(to_fastqc_raw_ch, 'raw')
     FastQCClean(Cutadapt.out, 'clean')
+    ReadsStatsRaw(to_fastqc_raw_ch, 'raw')
+    ReadsStatsClean(Cutadapt.out, 'clean')
+
 
     // References collection channel creation
     samples_config_ch.references

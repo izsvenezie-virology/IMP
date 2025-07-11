@@ -27,3 +27,19 @@ process AlignmentStats {
     statistics_alignment.py ${id} ${bam} >alignment_stats.txt
     """
 }
+
+process ReadsStats {
+    tag "${id}"
+
+    input:
+    tuple val(id), path(reads)
+    val type
+
+    output:
+    tuple val(id), path('alignment_stats.txt'), topic: 'statistics'
+
+    script:
+    """
+    statistics_reads.py ${id} ${type} ${reads} >alignment_stats.txt
+    """
+}
