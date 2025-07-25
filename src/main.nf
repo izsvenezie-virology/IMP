@@ -335,6 +335,10 @@ workflow {
         | combine(VariantCall.out, by: 0)
         | VariantsStats
 
+    VariantsStats.out
+        | filter { it -> !(it[1].text =~ '\tTotal\tFrameshifts\t0') }
+        | collectFile(storeDir: 'warnings') { it -> ['frameshifts.txt', "${it[0]}\n"] }
+
     // Create consensuses
     metadata_ch
         | map { meta -> [meta.id, meta.reference, meta.id, [name: meta.name, minimum_coverage: meta.minimum_coverage]] }
