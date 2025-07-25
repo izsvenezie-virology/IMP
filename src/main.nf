@@ -249,11 +249,15 @@ workflow {
         | BWAMem
         | BamIndex
 
+    GenomeCov(BWAMem.out)
+        | Tacos
+
     BWAMem.out
         | AlignmentStats
 
-    GenomeCov(BWAMem.out)
-        | Tacos
+    AlignmentStats.out
+        | filter { it -> it[1].text =~ '\tTotal\tMapped reads\t0' }
+        | collectFile(storeDir: 'warnings') { it -> ['no_mapped_reads.txt', "${it[0]}\n"] }
 
     metadata_ch
         | map { meta -> [meta.id, meta.minimum_coverage] }
@@ -261,9 +265,12 @@ workflow {
         | CoverageStats
 
     // GATK best practices
-    FixBam(BWAMem.out)
-
-    CleanBam(FixBam.out)
+    AlignmentStats.out
+        | filter { it -> !(it[1].text =~ '\tTotal\tMapped reads\t0') }
+        | map { it -> [it[0]] }
+        | join(BWAMem.out)
+        | FixBam
+        | CleanBam
 
     metadata_ch
         | map { meta -> [meta.id, meta.reference, meta.id] }
@@ -273,10 +280,8 @@ workflow {
         | combine(BWAIndex.out, by: 0)
         | map { it -> it.tail() }
         | Viterbi
-
-    MDSort(Viterbi.out)
-
-    MarkDuplicates(MDSort.out)
+        | MDSort
+        | MarkDuplicates
         | MDBamIndex
 
     metadata_ch
@@ -288,8 +293,7 @@ workflow {
         | combine(FaidxIndex.out, by: 0)
         | map { it -> it.tail() }
         | FakeVariantCall
-
-    IndexFeatureFile(FakeVariantCall.out)
+        | IndexFeatureFile
 
     metadata_ch
         | map { meta -> [meta.id, meta.reference, meta.id] }
