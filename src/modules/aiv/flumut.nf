@@ -2,7 +2,7 @@ process UpdateFluMut {
     tag "FluMutDB"
 
     memory '500 MB'
-    time '5m'
+    time '1h'
 
     output:
     val 'true'
@@ -18,7 +18,7 @@ process FluMut {
     tag "${id}"
 
     memory '2 GB'
-    time '30m'
+    time '1h'
 
     input:
     tuple val(id), path(fasta)

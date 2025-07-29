@@ -3,7 +3,7 @@ process Cutadapt {
     label 'multiThread'
 
     memory '4 GB'
-    time '1m'
+    time '1h'
 
     input:
     tuple val(id), val(parameters), path(reads), path(primers)

@@ -2,7 +2,7 @@ process DictIndex {
     tag "${id}"
 
     memory '1 GB'
-    time '30s'
+    time '1h'
 
     input:
     tuple val(id), path(reference)
@@ -20,7 +20,7 @@ process IndexFeatureFile {
     tag "${id}"
 
     memory '1 GB'
-    time '30s'
+    time '1h'
 
     input:
     tuple val(id), path(feature_file)
@@ -38,7 +38,7 @@ process FixBam {
     tag "${id}"
 
     memory '20 GB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(bam)
@@ -56,7 +56,7 @@ process CleanBam {
     tag "${id}"
 
     memory '5 GB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(bam)
@@ -74,7 +74,7 @@ process MarkDuplicates {
     tag "${id}"
 
     memory '25 GB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(bam)
@@ -92,7 +92,7 @@ process BaseRecalibrator {
     tag "${id}"
 
     memory '5 GB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(bam), path(reference), path(ref_idx), path(dict_idx), path(known_sites), path(feature_idx)
@@ -110,7 +110,7 @@ process ApplyBQSR {
     tag "${id}"
 
     memory '5 GB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(bam), path(recalibration)

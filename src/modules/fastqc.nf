@@ -3,7 +3,7 @@ process FastQC {
 
     cpus 2
     memory '2 GB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(reads)

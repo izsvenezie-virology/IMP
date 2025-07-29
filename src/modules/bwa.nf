@@ -3,7 +3,7 @@ process BWAMem {
     label 'multiThread'
 
     memory '10 GB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(reads), path(reference), path(index)
@@ -22,7 +22,7 @@ process BWAIndex {
     tag "${id}"
 
     memory '50 MB'
-    time '30s'
+    time '1h'
 
     input:
     tuple val(id), path(reference)

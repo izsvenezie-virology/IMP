@@ -3,7 +3,7 @@ process Tacos {
     errorStrategy 'ignore'
 
     memory '1 GB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(coverage)

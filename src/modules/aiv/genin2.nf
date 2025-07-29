@@ -2,7 +2,7 @@ process UpdateGenin2 {
     tag "Genin2"
 
     memory '500 MB'
-    time '5m'
+    time '1h'
 
     output:
     val 'true'
@@ -18,7 +18,7 @@ process Genin2 {
     tag "${id}"
 
     memory '2 GB'
-    time '30m'
+    time '1h'
 
     input:
     tuple val(id), path(fasta)

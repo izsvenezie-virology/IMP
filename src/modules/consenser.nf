@@ -2,7 +2,7 @@ process Consenser {
     tag "${id}"
 
     memory '500 MB'
-    time '30s'
+    time '1h'
 
     input:
     tuple val(id), val(parameters), path(vcf), path(coverage), path(reference)

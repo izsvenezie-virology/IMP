@@ -2,7 +2,7 @@ process GenomeCov {
     tag "${id}"
 
     memory '500 MB'
-    time '30s'
+    time '1h'
 
     input:
     tuple val(id), path(bam)
