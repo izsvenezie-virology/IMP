@@ -16,9 +16,9 @@ with pysam.AlignmentFile(bam_file, "rb") as bam:
         if read.is_secondary:
             continue
         if read.is_unmapped:
-            unmapped_reads.add(read)
+            unmapped_reads.add(hash(read.query_name))
             continue
-        mapped_reads[read.reference_name].add((read.query_name, read.is_read1))
+        mapped_reads[read.reference_name].add(hash((read.query_name, read.is_read1)))
 
 reads_count = defaultdict(int)
 for reference in mapped_reads:
