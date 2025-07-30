@@ -1,6 +1,9 @@
 process CoverageStats {
     tag "${id}"
 
+    memory '2 GB'
+    time '1h'
+
     input:
     tuple val(id), val(minimum_coverage), path(coverage)
 
@@ -15,6 +18,9 @@ process CoverageStats {
 
 process AlignmentStats {
     tag "${id}"
+
+    memory '2 GB'
+    time '1h'
 
     input:
     tuple val(id), path(bam)
@@ -31,6 +37,9 @@ process AlignmentStats {
 process ReadsStats {
     tag "${id}"
 
+    memory '2 GB'
+    time '1h'
+
     input:
     tuple val(id), path(reads)
     val type
@@ -46,6 +55,9 @@ process ReadsStats {
 
 process VariantsStats {
     tag "${id}"
+
+    memory '2 GB'
+    time '1h'
 
     input:
     tuple val(id), val(minimum_coverage), path(vcf)
