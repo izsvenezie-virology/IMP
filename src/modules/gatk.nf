@@ -1,8 +1,9 @@
 process DictIndex {
     tag "${id}"
 
+    cpus 4
     memory '1 GB'
-    time '30s'
+    time '1h'
 
     input:
     tuple val(id), path(reference)
@@ -19,8 +20,9 @@ process DictIndex {
 process IndexFeatureFile {
     tag "${id}"
 
+    cpus 4
     memory '1 GB'
-    time '30s'
+    time '1h'
 
     input:
     tuple val(id), path(feature_file)
@@ -37,8 +39,9 @@ process IndexFeatureFile {
 process FixBam {
     tag "${id}"
 
+    cpus 4
     memory '20 GB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(bam)
@@ -55,8 +58,9 @@ process FixBam {
 process CleanBam {
     tag "${id}"
 
+    cpus 4
     memory '5 GB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(bam)
@@ -73,8 +77,9 @@ process CleanBam {
 process MarkDuplicates {
     tag "${id}"
 
+    cpus 4
     memory '25 GB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(bam)
@@ -91,8 +96,9 @@ process MarkDuplicates {
 process BaseRecalibrator {
     tag "${id}"
 
+    cpus 4
     memory '5 GB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(bam), path(reference), path(ref_idx), path(dict_idx), path(known_sites), path(feature_idx)
@@ -109,8 +115,9 @@ process BaseRecalibrator {
 process ApplyBQSR {
     tag "${id}"
 
+    cpus 4
     memory '5 GB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(bam), path(recalibration)

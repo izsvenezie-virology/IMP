@@ -2,7 +2,7 @@ process Viterbi {
     tag "${id}"
 
     memory '500 MB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(bam), path(reference), path(reference_index)
@@ -21,7 +21,7 @@ process Call {
     label 'multiThread'
 
     memory '5 GB'
-    time '15m'
+    time '1h'
 
     input:
     tuple val(id), path(bam), path(bam_index), path(reference), path(reference_index)
@@ -39,7 +39,7 @@ process IndelQual {
     tag "${id}"
 
     memory '500 MB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(bam), path(reference)

@@ -8,6 +8,7 @@ import sys
 
 primers_tsv = sys.argv[1]
 
+# fmt: off
 complements = {
     'A': 'T', 'T': 'A', 'U': 'A',
     'C': 'G', 'G': 'C',
@@ -18,14 +19,17 @@ complements = {
     'D': 'H', 'H': 'D',
     'N': 'N'
 }
+# fmt: on
 
-with open(primers_tsv, 'r') as f_in:
-    with open('primers_5g.fa', 'w') as f_5first:
-        with open('primers_3a.fa', 'w') as f_3first:
+with open(primers_tsv, "r") as f_in:
+    with open("primers_5g.fa", "w") as f_5first:
+        with open("primers_3a.fa", "w") as f_3first:
             for line in f_in:
-                if not line.strip(): 
+                if not line.strip():
                     continue
-                id, sequence = line.strip().split('\t')
-                f_5first.write(f'>{id}\nX{sequence}\n')
-                rc_sequence = ''.join([complements[c] for c in reversed(sequence.upper())])
-                f_3first.write(f'>{id}_rc\n{rc_sequence}X\n')
+                id, sequence = line.strip().split("\t")
+                f_5first.write(f">{id}\nX{sequence}\n")
+                rc_sequence = "".join(
+                    [complements[c] for c in reversed(sequence.upper())]
+                )
+                f_3first.write(f">{id}_rc\n{rc_sequence}X\n")

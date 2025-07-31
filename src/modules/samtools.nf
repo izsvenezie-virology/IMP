@@ -2,7 +2,7 @@ process FaidxIndex {
     tag "${id}"
 
     memory '500 MB'
-    time '30s'
+    time '1h'
 
     input:
     tuple val(id), path(reference)
@@ -20,7 +20,7 @@ process Sort {
     tag "${id}"
 
     memory '5 GB'
-    time '5m'
+    time '1h'
 
     input:
     tuple val(id), path(bam)
@@ -38,7 +38,7 @@ process BamIndex {
     tag "${id}"
 
     memory '500 MB'
-    time '30s'
+    time '1h'
 
     input:
     tuple val(id), path(bam)

@@ -2,7 +2,7 @@ process GetReference {
     tag "${id}"
 
     memory '500 MB'
-    time '30s'
+    time '1h'
 
     input:
     tuple val(id), path(ref_names)
@@ -21,7 +21,7 @@ process ConcatenateConensus {
     tag "${id}"
 
     memory '500MB'
-    time '30s'
+    time '1h'
 
     input:
     tuple val(id), path(consensuses)

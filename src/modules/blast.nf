@@ -25,7 +25,7 @@ process MakeBlastDb {
     tag "${references_fasta.baseName}"
 
     memory '1 GB'
-    time '5m'
+    time '24h'
 
     input:
     path references_fasta

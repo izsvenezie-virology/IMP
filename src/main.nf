@@ -30,10 +30,6 @@ include {
     FastQC as FastQCClean
 } from './modules/fastqc.nf'
 include {
-    UpdateFluMut ;
-    FluMut
-} from './modules/flumut.nf'
-include {
     DictIndex ;
     FixBam ;
     CleanBam ;
@@ -42,10 +38,6 @@ include {
     IndexFeatureFile ;
     ApplyBQSR
 } from './modules/gatk.nf'
-include {
-    UpdateGenin2 ;
-    Genin2
-} from './modules/genin2.nf'
 include {
     Viterbi ;
     Call as FakeVariantCall ;
@@ -70,7 +62,22 @@ include {
 include {
     Tacos
 } from './modules/tacos.nf'
+include {
+    ReadsStats as ReadsStatsRaw ;
+    ReadsStats as ReadsStatsClean ;
+    CoverageStats ;
+    AlignmentStats ;
+    VariantsStats
+} from './modules/statistics/python.nf'
 
+include {
+    UpdateFluMut ;
+    FluMut
+} from './modules/aiv/flumut.nf'
+include {
+    UpdateGenin2 ;
+    Genin2
+} from './modules/aiv/genin2.nf'
 include {
     AIVSubtype
 } from './workflows/aiv_subtype.nf'
@@ -138,15 +145,15 @@ workflow {
         | splitCsv(header: true, sep: '\t')
         | multiMap { it ->
             // If a reference is not provided set the file to null, create a custom id and set the subset > 0.
-            // If a reference is provided and the file exists use it and set the simpleName as ID. The subset must be null.
-            // Else if the file does not exists set the file to null and use the simpleName as ID. The subset must be null.
+            // If a reference is provided and the file exists use it and set the.baseName as ID. The subset must be null.
+            // Else if the file does not exists set the file to null and use the.baseName as ID. The subset must be null.
             def reference_file = file(it.Reference ?: 'non_existing_file').exists() ? file(it.Reference) : null
-            def reference_id = it.Reference ? file(it.Reference).simpleName : "${it.Sample}_ref"
+            def reference_id = it.Reference ? file(it.Reference).baseName : "${it.Sample}_ref"
 
             def subset = it.Reference ? null : it.Subset ?: 0.2
 
             def primers_file = file(it.Primers ?: params.null_file, checkIfExists: true)
-            def primers_id = primers_file.simpleName
+            def primers_id = primers_file.baseName
             metadata: [
                 id: "${it.Sample}__${reference_id}",
                 sample: it.Sample,
@@ -155,6 +162,7 @@ workflow {
                 reference: reference_id,
                 subset: subset,
                 group: it.Group,
+                minimum_coverage: it.MinimumCoverage ?: 20,
             ]
             primers: [primers_id, primers_file]
             references: [reference_id, reference_file]
@@ -186,6 +194,9 @@ workflow {
     // Reads quality assesment
     FastQCRaw(to_fastqc_raw_ch, 'raw')
     FastQCClean(Cutadapt.out, 'clean')
+    ReadsStatsRaw(to_fastqc_raw_ch, 'raw')
+    ReadsStatsClean(Cutadapt.out, 'clean')
+
 
     // References collection channel creation
     samples_config_ch.references
@@ -241,10 +252,25 @@ workflow {
     GenomeCov(BWAMem.out)
         | Tacos
 
-    // GATK best practices
-    FixBam(BWAMem.out)
+    BWAMem.out
+        | AlignmentStats
 
-    CleanBam(FixBam.out)
+    AlignmentStats.out
+        | filter { it -> it[1].text =~ '\tTotal\tMapped reads\t0' }
+        | collectFile(storeDir: 'warnings') { it -> ['no_mapped_reads.txt', "${it[0]}\n"] }
+
+    metadata_ch
+        | map { meta -> [meta.id, meta.minimum_coverage] }
+        | combine(GenomeCov.out, by: 0)
+        | CoverageStats
+
+    // GATK best practices
+    AlignmentStats.out
+        | filter { it -> !(it[1].text =~ '\tTotal\tMapped reads\t0') }
+        | map { it -> [it[0]] }
+        | join(BWAMem.out)
+        | FixBam
+        | CleanBam
 
     metadata_ch
         | map { meta -> [meta.id, meta.reference, meta.id] }
@@ -254,10 +280,8 @@ workflow {
         | combine(BWAIndex.out, by: 0)
         | map { it -> it.tail() }
         | Viterbi
-
-    MDSort(Viterbi.out)
-
-    MarkDuplicates(MDSort.out)
+        | MDSort
+        | MarkDuplicates
         | MDBamIndex
 
     metadata_ch
@@ -269,8 +293,7 @@ workflow {
         | combine(FaidxIndex.out, by: 0)
         | map { it -> it.tail() }
         | FakeVariantCall
-
-    IndexFeatureFile(FakeVariantCall.out)
+        | IndexFeatureFile
 
     metadata_ch
         | map { meta -> [meta.id, meta.reference, meta.id] }
@@ -307,9 +330,18 @@ workflow {
         | map { it -> it.tail() }
         | VariantCall
 
+    metadata_ch
+        | map { meta -> [meta.id, meta.minimum_coverage] }
+        | combine(VariantCall.out, by: 0)
+        | VariantsStats
+
+    VariantsStats.out
+        | filter { it -> !(it[1].text =~ '\tTotal\tFrameshifts\t0') }
+        | collectFile(storeDir: 'warnings') { it -> ['frameshifts.txt', "${it[0]}\n"] }
+
     // Create consensuses
     metadata_ch
-        | map { meta -> [meta.id, meta.reference, meta.id, [name: meta.name]] }
+        | map { meta -> [meta.id, meta.reference, meta.id, [name: meta.name, minimum_coverage: meta.minimum_coverage]] }
         | combine(VariantCall.out, by: 0)
         | combine(GenomeCov.out, by: 0)
         | map { it -> it.tail() }
@@ -344,10 +376,15 @@ workflow {
         Genin2(CC_run.out, UpdateGenin2.out)
     }
 
+    Channel.topic('statistics')
+        | map { it -> [it[1]] }
+        | flatten
+        | collectFile(name: 'statistics.tsv', storeDir: 'results')
+
     publish:
     fastqc = Channel.topic('reads_quality')
     cutadapt = Cutadapt.out
-    reference = GetReference.out
+    reference = PrepareReference.out
     bwa = BWAMem.out
     bwa_index = BamIndex.out
     coverage = GenomeCov.out
@@ -376,7 +413,7 @@ output {
     }
     reference {
         path { sample ->
-            sample[1] >> "refs/${sample[0]}.fa"
+            sample[1] >> "references/${sample[0]}.fa"
         }
     }
     bwa {
