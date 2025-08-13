@@ -24,14 +24,16 @@ process Call {
     time '1h'
 
     input:
-    tuple val(id), path(bam), path(bam_index), path(reference), path(reference_index)
+    tuple val(id), val(parameters), path(bam), path(bam_index), path(reference), path(reference_index)
 
     output:
     tuple val(id), path("variants.vcf")
 
     script:
+    def deactivate_filters = parameters.no_filters ? '--no-default-filter -A -B -a 1 -b 1' : ''
     """
-    lofreq call-parallel --call-indels --pp-threads ${task.cpus} -f ${reference} -o variants.vcf ${bam}
+    lofreq call-parallel --call-indels --pp-threads ${task.cpus} ${deactivate_filters} -f ${reference} -o variants.vcf.gz ${bam}
+    gunzip variants.vcf.gz
     """
 }
 

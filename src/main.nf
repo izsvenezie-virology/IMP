@@ -163,6 +163,7 @@ workflow {
                 subset: subset,
                 group: it.Group,
                 minimum_coverage: it.MinimumCoverage ?: 20,
+                no_filters: it.NoConsensusFilter ? true : false,
             ]
             primers: [primers_id, primers_file]
             references: [reference_id, reference_file]
@@ -285,7 +286,7 @@ workflow {
         | MDBamIndex
 
     metadata_ch
-        | map { meta -> [meta.id, meta.reference, meta.id] }
+        | map { meta -> [meta.id, meta.reference, meta.id, []] }
         | combine(MarkDuplicates.out, by: 0)
         | combine(MDBamIndex.out, by: 0)
         | map { it -> it.tail() }
@@ -321,7 +322,7 @@ workflow {
         | IQBamIndex
 
     metadata_ch
-        | map { meta -> [meta.id, meta.reference, meta.id] }
+        | map { meta -> [meta.id, meta.reference, meta.id, [no_filters: meta.no_filters]] }
         | combine(IndelQual.out, by: 0)
         | combine(IQBamIndex.out, by: 0)
         | map { it -> it.tail() }

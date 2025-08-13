@@ -17,10 +17,11 @@ process Cutadapt {
     def min_len = parameters.min_len ?: 80
     def remove_primers_opt = primers.name == file(params.null_file).name
         ? ''
-        : """-a file:primers_3a.fa -A file:primers_3a.fa \
-             -g file:primers_5g.fa -G file:primers_5g.fa \
-             --times=3"""
-
+        : """ \
+            -a file:primers_3a.fa -A file:primers_3a.fa \
+            -g file:primers_5g.fa -G file:primers_5g.fa \
+            --times=3 \
+          """
     """
     cutadapt --interleaved -j ${task.cpus} \
         --action=trim --pair-filter=any \
