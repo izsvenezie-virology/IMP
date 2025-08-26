@@ -170,7 +170,12 @@ workflow {
         }
         | set { samples_config_ch }
 
-    metadata_ch = samples_config_ch.metadata
+    // Metadata channel creation
+    samples_config_ch.metadata
+        | unique
+        | filter { it -> !it.sample.startsWith("#") }
+        | set { metadata_ch }
+
     samples_config_ch.primers
         | unique
         | CreateCutadaptPrimers
@@ -232,7 +237,19 @@ workflow {
     // Alert if some references are empty
     GetReference.out
         | filter { it -> it[1].isEmpty() }
-        | collectFile(storeDir: 'warnings') { it -> ['empty_references.txt', "${it[0]}\t${it[1]}\n"] }
+        | view { it -> "<${it[0]}> is an empty reference" }
+        | collectFile(
+            storeDir: 'warnings'
+        ) { it -> ['empty_references.txt', "${it[0]}\n"] }
+
+    // Check if all the samples has a reference (even if it's empty)
+    metadata_ch
+        | map { meta -> [meta.reference, meta.id] }
+        | unique
+        | join(GetReference.out.mix(provided_references), remainder: true)
+        | map { it -> it.tail() }
+        | filter { it -> it[1] == null }
+        | map { error("<${it[0]}> reference file does not exist") }
 
     // References channel creation
     GetReference.out
@@ -266,6 +283,7 @@ workflow {
 
     AlignmentStats.out
         | filter { it -> it[1].text =~ '\tTotal\tMapped reads\t0' }
+        | view { it -> "<${it[0]}> has 0 mapped reads" }
         | collectFile(storeDir: 'warnings') { it -> ['no_mapped_reads.txt', "${it[0]}\n"] }
 
     metadata_ch
@@ -346,6 +364,7 @@ workflow {
 
     VariantsStats.out
         | filter { it -> !(it[1].text =~ '\tTotal\tFrameshifts\t0') }
+        | view { it -> "<${it[0]}> has frameshifts" }
         | collectFile(storeDir: 'warnings') { it -> ['frameshifts.txt', "${it[0]}\n"] }
 
     // Create consensuses
