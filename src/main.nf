@@ -422,7 +422,7 @@ output {
     }
     reference {
         path { sample ->
-            sample[1] >> "references/${sample[0]}.fa"
+            sample[1] >> "alignments/references/${sample[0]}.fa"
         }
     }
     bwa {
