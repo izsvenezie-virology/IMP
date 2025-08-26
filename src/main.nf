@@ -175,6 +175,14 @@ workflow {
         | unique
         | CreateCutadaptPrimers
 
+    // Check if all samples has fastq files
+    metadata_ch
+        | map { meta -> [meta.sample] }
+        | unique
+        | join(raw_reads, remainder: true)
+        | filter { it -> it[1] == null }
+        | map { error("<${it[0]}> is missing fastq files") }
+
     // Clean reads
     metadata_ch
         | map { meta -> [meta.sample, meta.primers, meta.sample, [phred_threshold: meta.minQual, min_len: meta.minLen]] }
