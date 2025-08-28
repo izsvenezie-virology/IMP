@@ -163,16 +163,30 @@ workflow {
                 subset: subset,
                 group: it.Group,
                 minimum_coverage: it.MinimumCoverage ?: 20,
+                no_filters: it.NoConsensusFilter ? true : false,
             ]
             primers: [primers_id, primers_file]
             references: [reference_id, reference_file]
         }
         | set { samples_config_ch }
 
-    metadata_ch = samples_config_ch.metadata
+    // Metadata channel creation
+    samples_config_ch.metadata
+        | unique
+        | filter { it -> !it.sample.startsWith("#") }
+        | set { metadata_ch }
+
     samples_config_ch.primers
         | unique
         | CreateCutadaptPrimers
+
+    // Check if all samples has fastq files
+    metadata_ch
+        | map { meta -> [meta.sample] }
+        | unique
+        | join(raw_reads, remainder: true)
+        | filter { it -> it[1] == null }
+        | map { error("<${it[0]}> is missing fastq files") }
 
     // Clean reads
     metadata_ch
@@ -223,7 +237,19 @@ workflow {
     // Alert if some references are empty
     GetReference.out
         | filter { it -> it[1].isEmpty() }
-        | collectFile(storeDir: 'warnings') { it -> ['empty_references.txt', "${it[0]}\t${it[1]}\n"] }
+        | view { it -> "<${it[0]}> is an empty reference" }
+        | collectFile(
+            storeDir: 'warnings'
+        ) { it -> ['empty_references.txt', "${it[0]}\n"] }
+
+    // Check if all the samples has a reference (even if it's empty)
+    metadata_ch
+        | map { meta -> [meta.reference, meta.id] }
+        | unique
+        | join(GetReference.out.mix(provided_references), remainder: true)
+        | map { it -> it.tail() }
+        | filter { it -> it[1] == null }
+        | map { error("<${it[0]}> reference file does not exist") }
 
     // References channel creation
     GetReference.out
@@ -257,6 +283,7 @@ workflow {
 
     AlignmentStats.out
         | filter { it -> it[1].text =~ '\tTotal\tMapped reads\t0' }
+        | view { it -> "<${it[0]}> has 0 mapped reads" }
         | collectFile(storeDir: 'warnings') { it -> ['no_mapped_reads.txt', "${it[0]}\n"] }
 
     metadata_ch
@@ -285,7 +312,7 @@ workflow {
         | MDBamIndex
 
     metadata_ch
-        | map { meta -> [meta.id, meta.reference, meta.id] }
+        | map { meta -> [meta.id, meta.reference, meta.id, []] }
         | combine(MarkDuplicates.out, by: 0)
         | combine(MDBamIndex.out, by: 0)
         | map { it -> it.tail() }
@@ -321,7 +348,7 @@ workflow {
         | IQBamIndex
 
     metadata_ch
-        | map { meta -> [meta.id, meta.reference, meta.id] }
+        | map { meta -> [meta.id, meta.reference, meta.id, [no_filters: meta.no_filters]] }
         | combine(IndelQual.out, by: 0)
         | combine(IQBamIndex.out, by: 0)
         | map { it -> it.tail() }
@@ -337,6 +364,7 @@ workflow {
 
     VariantsStats.out
         | filter { it -> !(it[1].text =~ '\tTotal\tFrameshifts\t0') }
+        | view { it -> "<${it[0]}> has frameshifts" }
         | collectFile(storeDir: 'warnings') { it -> ['frameshifts.txt', "${it[0]}\n"] }
 
     // Create consensuses
@@ -413,7 +441,7 @@ output {
     }
     reference {
         path { sample ->
-            sample[1] >> "references/${sample[0]}.fa"
+            sample[1] >> "alignments/references/${sample[0]}.fa"
         }
     }
     bwa {
