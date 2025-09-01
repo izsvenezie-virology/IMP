@@ -78,9 +78,6 @@ include {
     UpdateGenin2 ;
     Genin2
 } from './modules/aiv/genin2.nf'
-include {
-    AIVSubtype
-} from './workflows/aiv_subtype.nf'
 
 workflow {
     main:
@@ -387,21 +384,10 @@ workflow {
         | CC_group
 
     if (params.virus == 'AIV') {
-        AIVSubtype(Cutadapt.out)
-            | map { it -> [it[1]] }
-            | flatten
-            | collectFile(name: 'subtypes.tsv', sort: { file -> file.text }, storeDir: 'results')
-
-        CC_group.out
-            | map { it -> it[1] }
-            | toList
-            | map { it -> [params.run, it] }
-            | CC_run
-
         UpdateFluMut()
         FluMut(CC_group.out, UpdateFluMut.out)
         UpdateGenin2()
-        Genin2(CC_run.out, UpdateGenin2.out)
+        Genin2(CC_group.out, UpdateGenin2.out)
     }
 
     Channel.topic('statistics')
