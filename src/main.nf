@@ -78,6 +78,9 @@ include {
     UpdateGenin2 ;
     Genin2
 } from './modules/aiv/genin2.nf'
+include {
+    AIVGetSubtype
+} from './modules/aiv/python.nf'
 
 workflow {
     main:
@@ -384,6 +387,9 @@ workflow {
         | CC_group
 
     if (params.virus == 'AIV') {
+        AIVGetSubtype(BlastN.out)
+            | collectFile(storeDir: 'results', sort: true) { it -> ['subtypes.tsv', "${it[0]}\t${it[1].text}"] }
+
         UpdateFluMut()
         FluMut(CC_group.out, UpdateFluMut.out)
         UpdateGenin2()
