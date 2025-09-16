@@ -388,7 +388,7 @@ workflow {
 
     if (params.virus == 'AIV') {
         AIVGetSubtype(BlastN.out)
-            | collectFile(storeDir: 'results', sort: true) { it -> ['subtypes.tsv', "${it[0]}\t${it[1].text}"] }
+            | collectFile(storeDir: 'results', sort: true) { it -> ['subtypes.tsv', "${it[0].replaceFirst(/_ref/, '')}\t${it[1].text}"] }
 
         UpdateFluMut()
         FluMut(CC_group.out, UpdateFluMut.out)
@@ -405,6 +405,7 @@ workflow {
     fastqc = Channel.topic('reads_quality')
     cutadapt = Cutadapt.out
     reference = PrepareReference.out
+    reference_composition = GetReferenceNames.out
     bwa = BWAMem.out
     bwa_index = BamIndex.out
     coverage = GenomeCov.out
@@ -434,6 +435,11 @@ output {
     reference {
         path { sample ->
             sample[1] >> "alignments/references/${sample[0]}.fa"
+        }
+    }
+    reference_composition {
+        path { sample ->
+            sample[1] >> "alignments/references/headers/${sample[0]}_reference_headers.txt"
         }
     }
     bwa {
