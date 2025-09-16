@@ -1,7 +1,7 @@
 process DictIndex {
     tag "${id}"
 
-    cpus 4
+    cpus 1
     memory '1 GB'
     time '1h'
 
@@ -20,7 +20,7 @@ process DictIndex {
 process IndexFeatureFile {
     tag "${id}"
 
-    cpus 4
+    cpus 1
     memory '1 GB'
     time '1h'
 
@@ -39,7 +39,7 @@ process IndexFeatureFile {
 process FixBam {
     tag "${id}"
 
-    cpus 4
+    cpus 1
     memory '20 GB'
     time '1h'
 
@@ -58,7 +58,7 @@ process FixBam {
 process CleanBam {
     tag "${id}"
 
-    cpus 4
+    cpus 1
     memory '5 GB'
     time '1h'
 
@@ -77,7 +77,7 @@ process CleanBam {
 process MarkDuplicates {
     tag "${id}"
 
-    cpus 4
+    cpus 1
     memory '25 GB'
     time '1h'
 
@@ -96,7 +96,7 @@ process MarkDuplicates {
 process BaseRecalibrator {
     tag "${id}"
 
-    cpus 4
+    cpus 1
     memory '5 GB'
     time '1h'
 
@@ -115,7 +115,7 @@ process BaseRecalibrator {
 process ApplyBQSR {
     tag "${id}"
 
-    cpus 4
+    cpus 1
     memory '5 GB'
     time '1h'
 
