@@ -206,8 +206,8 @@ workflow {
         | set { to_fastqc_raw_ch }
 
     // Reads quality assesment
-    FastQCRaw(to_fastqc_raw_ch, 'raw')
-    FastQCClean(Cutadapt.out, 'clean')
+    FastQCRaw(to_fastqc_raw_ch)
+    FastQCClean(Cutadapt.out)
     ReadsStatsRaw(to_fastqc_raw_ch, 'raw')
     ReadsStatsClean(Cutadapt.out, 'clean')
 
@@ -402,7 +402,8 @@ workflow {
         | collectFile(name: 'statistics.tsv', storeDir: 'results')
 
     publish:
-    fastqc = Channel.topic('reads_quality')
+    fastqc_raw = FastQCRaw.out
+    fastqc_clean = FastQCClean.out
     cutadapt = Cutadapt.out
     reference = PrepareReference.out
     reference_composition = GetReferenceNames.out
@@ -419,10 +420,16 @@ workflow {
 }
 
 output {
-    fastqc {
+    fastqc_raw {
         path { sample ->
-            sample[2][0] >> "reads_quality/${sample[1]}/${sample[0]}_R1.html"
-            sample[2][1] >> "reads_quality/${sample[1]}/${sample[0]}_R2.html"
+            sample[1][0] >> "reads_quality/raw/${sample[0]}_R1.html"
+            sample[1][1] >> "reads_quality/raw/${sample[0]}_R2.html"
+        }
+    }
+    fastqc_clean {
+        path { sample ->
+            sample[1][0] >> "reads_quality/clean/${sample[0]}_R1.html"
+            sample[1][1] >> "reads_quality/clean/${sample[0]}_R2.html"
         }
     }
     cutadapt {

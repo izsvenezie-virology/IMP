@@ -7,10 +7,9 @@ process FastQC {
 
     input:
     tuple val(id), path(reads)
-    val type
 
     output:
-    tuple val(id), val(type), path('*.html'), topic: reads_quality
+    tuple val(id), path('*.html')
 
     script:
     """
