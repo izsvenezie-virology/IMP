@@ -130,9 +130,6 @@ workflow {
     """
     )
 
-    // BLAST DB channel
-    references_db = file(params.references_database, checkIfExists: true)
-
     // Adapters channel
     adapters = file(params.adapters, checkIfExists: true)
 
@@ -150,7 +147,7 @@ workflow {
             def reference_file = file(it.Reference ?: 'non_existing_file').exists() ? file(it.Reference) : null
             def reference_id = it.Reference ? file(it.Reference).baseName : "${it.Sample}_ref"
 
-            def subset = it.Reference ? null : it.Subset ?: 0.2
+            def subset = it.Reference ? null : it.Subset ?: 1
 
             def primers_file = file(it.Primers ?: params.null_file, checkIfExists: true)
             def primers_id = primers_file.baseName
@@ -206,8 +203,8 @@ workflow {
         | set { to_fastqc_raw_ch }
 
     // Reads quality assesment
-    FastQCRaw(to_fastqc_raw_ch, 'raw')
-    FastQCClean(Cutadapt.out, 'clean')
+    FastQCRaw(to_fastqc_raw_ch)
+    FastQCClean(Cutadapt.out)
     ReadsStatsRaw(to_fastqc_raw_ch, 'raw')
     ReadsStatsClean(Cutadapt.out, 'clean')
 
@@ -221,9 +218,11 @@ workflow {
     metadata_ch
         | filter { it -> it.subset }
         | first
-        | map { references_db }
-        | MakeBlastDb
+        | map { file(params.references_database, checkIfExists: true) }
+        | set { references_db }
+
     // create blastDB only if at least one reference must be found
+    MakeBlastDb(references_db)
     metadata_ch
         | filter { it -> it.subset }
         | map { meta -> [meta.sample, meta.reference, meta.subset] }
@@ -396,13 +395,19 @@ workflow {
         Genin2(CC_group.out, UpdateGenin2.out)
     }
 
+    if (params.virus == 'SIV') {
+        AIVGetSubtype(BlastN.out)
+            | collectFile(storeDir: 'results', sort: true) { it -> ['subtypes.tsv', "${it[0].replaceFirst(/_ref/, '')}\t${it[1].text}"] }
+    }
+
     Channel.topic('statistics')
         | map { it -> [it[1]] }
         | flatten
         | collectFile(name: 'statistics.tsv', storeDir: 'results')
 
     publish:
-    fastqc = Channel.topic('reads_quality')
+    fastqc_raw = FastQCRaw.out
+    fastqc_clean = FastQCClean.out
     cutadapt = Cutadapt.out
     reference = PrepareReference.out
     reference_composition = GetReferenceNames.out
@@ -419,10 +424,16 @@ workflow {
 }
 
 output {
-    fastqc {
+    fastqc_raw {
         path { sample ->
-            sample[2][0] >> "reads_quality/${sample[1]}/${sample[0]}_R1.html"
-            sample[2][1] >> "reads_quality/${sample[1]}/${sample[0]}_R2.html"
+            sample[1][0] >> "reads_quality/raw/${sample[0]}_R1.html"
+            sample[1][1] >> "reads_quality/raw/${sample[0]}_R2.html"
+        }
+    }
+    fastqc_clean {
+        path { sample ->
+            sample[1][0] >> "reads_quality/clean/${sample[0]}_R1.html"
+            sample[1][1] >> "reads_quality/clean/${sample[0]}_R2.html"
         }
     }
     cutadapt {
