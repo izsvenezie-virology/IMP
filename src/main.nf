@@ -150,7 +150,7 @@ workflow {
             def reference_file = file(it.Reference ?: 'non_existing_file').exists() ? file(it.Reference) : null
             def reference_id = it.Reference ? file(it.Reference).baseName : "${it.Sample}_ref"
 
-            def subset = it.Reference ? null : it.Subset ?: 0.2
+            def subset = it.Reference ? null : it.Subset ?: 1
 
             def primers_file = file(it.Primers ?: params.null_file, checkIfExists: true)
             def primers_id = primers_file.baseName
@@ -394,6 +394,11 @@ workflow {
         FluMut(CC_group.out, UpdateFluMut.out)
         UpdateGenin2()
         Genin2(CC_group.out, UpdateGenin2.out)
+    }
+
+    if (params.virus == 'SIV') {
+        AIVGetSubtype(BlastN.out)
+            | collectFile(storeDir: 'results', sort: true) { it -> ['subtypes.tsv', "${it[0].replaceFirst(/_ref/, '')}\t${it[1].text}"] }
     }
 
     Channel.topic('statistics')
