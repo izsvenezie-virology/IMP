@@ -130,9 +130,6 @@ workflow {
     """
     )
 
-    // BLAST DB channel
-    references_db = file(params.references_database, checkIfExists: true)
-
     // Adapters channel
     adapters = file(params.adapters, checkIfExists: true)
 
@@ -221,9 +218,11 @@ workflow {
     metadata_ch
         | filter { it -> it.subset }
         | first
-        | map { references_db }
-        | MakeBlastDb
+        | map { file(params.references_database, checkIfExists: true) }
+        | set { references_db }
+
     // create blastDB only if at least one reference must be found
+    MakeBlastDb(references_db)
     metadata_ch
         | filter { it -> it.subset }
         | map { meta -> [meta.sample, meta.reference, meta.subset] }
