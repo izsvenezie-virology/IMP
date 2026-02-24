@@ -21,4 +21,4 @@ with open(best_hits_file, "r") as f:
         sequences[seg][ref] += 1
 
 for seg in sequences.keys():
-    print(f">{max(sequences[seg], key=sequences[seg].get)}", end="\n")
+    print(f">{max(sequences[seg], key=sequences[seg].get)}", end="\n")  # type: ignore
