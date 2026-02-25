@@ -4,8 +4,7 @@ nextflow.preview.output = true
 
 include {
     GetReference ;
-    ConcatenateConensus as CC_group ;
-    ConcatenateConensus as CC_run
+    ConcatenateConensus
 } from './modules/bash.nf'
 include {
     GenomeCov
@@ -19,8 +18,7 @@ include {
     BWAIndex
 } from './modules/bwa.nf'
 include {
-    Consenser as DegeneratedConsensus ;
-    Consenser as NonDegeneratedConsensus
+    Consenser
 } from './modules/consenser.nf'
 include {
     Cutadapt
@@ -275,6 +273,7 @@ workflow {
         | BamIndex
 
     GenomeCov(BWAMem.out)
+        | combine(metadata_ch.map { meta -> [meta.id, meta.minimum_coverage] }, by: 0)
         | Tacos
 
     BWAMem.out
@@ -374,25 +373,23 @@ workflow {
         | map { it -> it.tail() }
         | combine(References, by: 0)
         | map { it -> it.tail() }
-        | set { vcf_coverage_reference }
-    DegeneratedConsensus(vcf_coverage_reference, true)
-    NonDegeneratedConsensus(vcf_coverage_reference, false)
+        | Consenser
 
     metadata_ch
         | map { meta -> [meta.id, meta.group] }
-        | combine(DegeneratedConsensus.out.consensus, by: 0)
+        | combine(Consenser.out.degenerated, by: 0)
         | map { it -> it.tail() }
         | groupTuple(by: 0)
-        | CC_group
+        | ConcatenateConensus
 
     if (params.virus == 'AIV') {
         AIVGetSubtype(BlastN.out)
             | collectFile(storeDir: 'results', sort: true) { it -> ['subtypes.tsv', "${it[0].replaceFirst(/_ref/, '')}\t${it[1].text}"] }
 
         UpdateFluMut()
-        FluMut(CC_group.out, UpdateFluMut.out)
+        FluMut(ConcatenateConensus.out, UpdateFluMut.out)
         UpdateGenin2()
-        Genin2(CC_group.out, UpdateGenin2.out)
+        Genin2(ConcatenateConensus.out, UpdateGenin2.out)
     }
 
     if (params.virus == 'SIV') {
@@ -416,10 +413,8 @@ workflow {
     coverage = GenomeCov.out
     tacos = Tacos.out
     vcfs = VariantCall.out
-    consensus_deg = DegeneratedConsensus.out.consensus
-    consensus_undeg = NonDegeneratedConsensus.out.consensus
-    conensus_segments_deg = DegeneratedConsensus.out.segments
-    consensus_segments_undeg = NonDegeneratedConsensus.out.segments
+    consensus_deg = Consenser.out.degenerated
+    consensus_undeg = Consenser.out.non_degenerated
     results = Channel.topic("results")
 }
 
@@ -444,51 +439,31 @@ output {
         mode 'symlink'
     }
     reference {
-        path { sample ->
-            sample[1] >> "alignments/references/${sample[0]}.fa"
-        }
+        path { sample -> sample[1] >> "alignments/references/${sample[0]}.fa" }
     }
     reference_composition {
-        path { sample ->
-            sample[1] >> "alignments/references/headers/${sample[0]}_reference_headers.txt"
-        }
+        path { sample -> sample[1] >> "alignments/references/headers/${sample[0]}_reference_headers.txt" }
     }
     bwa {
-        path { sample ->
-            sample[1] >> "alignments/${sample[0]}.bam"
-        }
+        path { sample -> sample[1] >> "alignments/${sample[0]}.bam" }
     }
     bwa_index {
-        path { sample ->
-            sample[1] >> "alignments/${sample[0]}.bam.bai"
-        }
+        path { sample -> sample[1] >> "alignments/${sample[0]}.bam.bai" }
     }
     coverage {
-        path { sample ->
-            sample[1] >> "coverage/raw/${sample[0]}_coverage.tsv"
-        }
+        path { sample -> sample[1] >> "coverage/raw/${sample[0]}_coverage.tsv" }
     }
     tacos {
-        path { sample ->
-            sample[1] >> "coverage/${sample[0]}_coverage.pdf"
-        }
+        path { sample -> sample[1] >> "coverage/${sample[0]}_coverage.pdf" }
     }
     vcfs {
-        path { sample ->
-            sample[1] >> "vcfs/${sample[0]}.vcf"
-        }
+        path { sample -> sample[1] >> "vcfs/${sample[0]}.vcf" }
     }
     consensus_deg {
-        path "consensus/"
+        path { sample -> sample[1] >> "consensus/${sample[0]}_consensus.fa" }
     }
     consensus_undeg {
-        path "consensus/unambiguous/"
-    }
-    conensus_segments_deg {
-        path "consensus/segments/"
-    }
-    consensus_segments_undeg {
-        path "consensus/unambiguous/segments/"
+        path { sample -> sample[1] >> "consensus/unambiguous/${sample[0]}_consensus.fa" }
     }
     results {
         path "results/"

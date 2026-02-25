@@ -6,13 +6,14 @@ process Tacos {
     time '1h'
 
     input:
-    tuple val(id), path(coverage)
+    tuple val(id), path(coverage), val(min_coverage)
 
     output:
     tuple val(id), path("coverage.pdf")
 
     script:
+    sample_id = id.split("__")[0]
     """
-    tacos -o coverage.pdf ${coverage}
+    tacos -m ${min_coverage} -s ${sample_id} ${coverage} coverage.pdf
     """
 }

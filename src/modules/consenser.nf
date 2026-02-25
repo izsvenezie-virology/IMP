@@ -6,16 +6,14 @@ process Consenser {
 
     input:
     tuple val(id), val(parameters), path(vcf), path(coverage), path(reference)
-    val degenerated
 
     output:
-    tuple val(id), path("${id}.fa"), emit: consensus
-    tuple val(id), path("${id}_*.fa"), emit: segments
+    tuple val(id), path("${id}_consensus.fa"), emit: degenerated
+    tuple val(id), path("${id}_consensus_non_degenerated.fa"), emit: non_degenerated
 
     script:
-    def deg_option = degenerated ? '-d' : ''
     """
-    consenser --force ${deg_option} -s ${id}_CHROMNAME.fa \
-    -a '${parameters.name}' --min-cov ${parameters.minimum_coverage} -o ${id}.fa -c ${coverage} ${reference} ${vcf}
+    consenser -H '${parameters.name}' -m ${parameters.minimum_coverage} -o ${id}_consensus.fa -c ${coverage} ${reference} ${vcf}
+    consenser -H '${parameters.name}' -m ${parameters.minimum_coverage} -s 1 -o ${id}_consensus_non_degenerated.fa -c ${coverage} ${reference} ${vcf}
     """
 }

@@ -19,5 +19,5 @@ dependencies:
   - python
   - pip
   - pip:
-    - git+https://gitlab.izsvenezie.it/EdoardoGiussani/consenser.git
-    - git+https://gitlab.izsvenezie.it/biv/arnesi/tacos.git
+    - git+https://github.com/izsvenezie-virology/consenser.git
+    - git+https://github.com/izsvenezie-virology/tacos.git
