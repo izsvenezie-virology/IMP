@@ -132,7 +132,7 @@ workflow {
     adapters = file(params.adapters, checkIfExists: true)
 
     // Samples channels creation
-    Channel.fromFilePairs("${params.raw_reads_folder}/*_R{1,2}*fastq.gz")
+    Channel.fromFilePairs("${params.raw_reads_folder}/${params.raw_reads_pattern}")
         | map { it -> [it[0].split("_S")[0], it.tail().flatten()] }
         | set { raw_reads }
 
@@ -156,7 +156,7 @@ workflow {
                 primers: primers_id,
                 reference: reference_id,
                 subset: subset,
-                group: it.Group,
+                group: it.Group ?: params.run_name,
                 minimum_coverage: it.MinimumCoverage ?: 20,
                 no_filters: it.NoConsensusFilter ? true : false,
             ]
