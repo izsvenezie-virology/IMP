@@ -1,6 +1,9 @@
 #! /usr/bin/env nextflow
 
-nextflow.preview.output = true
+if (nextflow.version < '25.10') {
+    nextflow.preview.output = true
+}
+
 
 include {
     GetReference ;
