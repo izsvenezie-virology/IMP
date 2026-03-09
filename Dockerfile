@@ -25,4 +25,5 @@ ENV NXF_LOG_FILE="/pipeline_cache/.nextflow.log"
 ENV NXF_CACHE_DIR="/pipeline_cache/.nextflow"
 ENV NXF_WORK="/pipeline_cache/work"
 
-CMD ["nextflow", "/imp/src/main.nf", "-resume", "-profile", "docker", "-c", "/pipeline_input/imp.config"]
+ENTRYPOINT ["nextflow", "/imp/src/main.nf", "-resume", "-profile", "docker"]
+CMD []
