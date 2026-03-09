@@ -237,7 +237,7 @@ workflow {
         | filter { it -> it[1].isEmpty() }
         | view { it -> "<${it[0]}> is an empty reference" }
         | collectFile(
-            storeDir: 'warnings'
+            storeDir: "${workflow.outputDir}/warnings"
         ) { it -> ['empty_references.txt', "${it[0]}\n"] }
 
     // Check if all the samples has a reference (even if it's empty)
@@ -283,7 +283,7 @@ workflow {
     AlignmentStats.out
         | filter { it -> it[1].text =~ '\tTotal\tMapped reads\t0' }
         | view { it -> "<${it[0]}> has 0 mapped reads" }
-        | collectFile(storeDir: 'warnings') { it -> ['no_mapped_reads.txt', "${it[0]}\n"] }
+        | collectFile(storeDir: "${workflow.outputDir}/warnings") { it -> ['no_mapped_reads.txt', "${it[0]}\n"] }
 
     metadata_ch
         | map { meta -> [meta.id, meta.minimum_coverage] }
@@ -364,7 +364,7 @@ workflow {
     VariantsStats.out
         | filter { it -> !(it[1].text =~ '\tTotal\tFrameshifts\t0') }
         | view { it -> "<${it[0]}> has frameshifts" }
-        | collectFile(storeDir: 'warnings') { it -> ['frameshifts.txt', "${it[0]}\n"] }
+        | collectFile(storeDir: "${workflow.outputDir}/warnings") { it -> ['frameshifts.txt', "${it[0]}\n"] }
 
     // Create consensuses
     metadata_ch
@@ -385,7 +385,7 @@ workflow {
 
     if (params.virus == 'AIV') {
         AIVGetSubtype(BlastN.out)
-            | collectFile(storeDir: 'results', sort: true) { it -> ['subtypes.tsv', "${it[0].replaceFirst(/_ref/, '')}\t${it[1].text}"] }
+            | collectFile(storeDir: "${workflow.outputDir}/results", sort: true) { it -> ['subtypes.tsv', "${it[0].replaceFirst(/_ref/, '')}\t${it[1].text}"] }
 
         UpdateFluMut()
         FluMut(ConcatenateConensus.out, UpdateFluMut.out)
@@ -395,13 +395,13 @@ workflow {
 
     if (params.virus == 'SIV') {
         AIVGetSubtype(BlastN.out)
-            | collectFile(storeDir: 'results', sort: true) { it -> ['subtypes.tsv', "${it[0].replaceFirst(/_ref/, '')}\t${it[1].text}"] }
+            | collectFile(storeDir: "${workflow.outputDir}/results", sort: true) { it -> ['subtypes.tsv', "${it[0].replaceFirst(/_ref/, '')}\t${it[1].text}"] }
     }
 
     Channel.topic('statistics')
         | map { it -> [it[1]] }
         | flatten
-        | collectFile(name: 'statistics.tsv', storeDir: 'results')
+        | collectFile(name: 'statistics.tsv', storeDir: "${workflow.outputDir}/results")
 
     publish:
     fastqc_raw = FastQCRaw.out
