@@ -1,8 +1,6 @@
 #! /usr/bin/env nextflow
 
-if (nextflow.version < '25.10') {
-    nextflow.preview.output = true
-}
+nextflow.preview.output = true
 
 
 include {
