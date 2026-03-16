@@ -5,30 +5,41 @@ The main workflow is in [`src/main.nf`](./src/main.nf).
 
 ## Feature keys
 
-1. Adapters trimming (`cutadapt`).
-1. Amplification primers trimming (`cutadapt`).
-1. Automatic best reference search (`blast`).
-1. Coverage plots (`tacos`).
-1. Degenerated and non-degenerated consensus (`consenser`).
+- Adapters trimming.
+- Amplification primers trimming.
+- Automatic best reference search.
+- Coverage plots.
+- Degenerated and non-degenerated consensus.
 
 ## Requirements
 
 - Nextflow
-- Conda/micromamba environment with tools in [`environment.yml`](./environment.yml)
+- All the programs listed in [`environment.yml`](./environment.yml) (Mamba, conda or docker is )
 - Input paired-end FASTQ files
 - Sample metadata TSV
 - Reference database FASTA (only required if any sample needs BLAST-based reference discovery)
 
-## Installation / environment
+## Installation
 
-Create an environment from the provided file:
+### Mamba
+
+Create the environment from the provided file:
 
 ```bash
 mamba create -n imp -f environment.yml
-mamba activate imp
+```
+
+### Docker
+
+Build the image:
+
+```bash
+docker build -t imp .
 ```
 
 ## Running the pipeline
+
+### Nextflow
 
 ```bash
 nextflow run src/main.nf --raw_reads_folder "/path/to/fastq_dir" --samples_metadata "/path/to/samples_metadata.tsv" -resume
@@ -38,6 +49,48 @@ Or with a config file:
 
 ```bash
 nextflow run src/main.nf -c <config_file> -resume
+```
+
+### Docker
+
+Run the pipeline by mounting your data to the container volumes:
+
+- `/pipeline_input/raw_reads`: folder with paired-end FASTQ files
+- `/pipeline_input/samples_metadata.tsv`: samples metadata TSV
+- `/pipeline_resources/references_database.fasta`: reference database FASTA (optional)
+- `/pipeline_output`: output directory
+- `/pipeline_cache`: Nextflow cache and work directory
+
+```bash
+docker run --rm \
+  -v "/path/to/fastq_dir":/pipeline_input/raw_reads \
+  -v "/path/to/samples_metadata.tsv":/pipeline_input/samples_metadata.tsv \
+  -v "/path/to/output":/pipeline_output \
+  -v "/path/to/cache":/pipeline_cache \
+  imp
+```
+
+To include a reference database:
+
+```bash
+docker run --rm \
+  -v "/path/to/fastq_dir":/pipeline_input/raw_reads \
+  -v "/path/to/samples_metadata.tsv":/pipeline_input/samples_metadata.tsv \
+  -v "/path/to/references_database.fasta":/pipeline_resources/references_database.fasta \
+  -v "/path/to/output":/pipeline_output \
+  -v "/path/to/cache":/pipeline_cache \
+  imp
+```
+
+Additional parameters can be appended after the image name:
+
+```bash
+docker run --rm \
+  -v "/path/to/fastq_dir":/pipeline_input/raw_reads \
+  -v "/path/to/samples_metadata.tsv":/pipeline_input/samples_metadata.tsv \
+  -v "/path/to/output":/pipeline_output \
+  -v "/path/to/cache":/pipeline_cache \
+  imp --virus AIV
 ```
 
 ## Parameters
