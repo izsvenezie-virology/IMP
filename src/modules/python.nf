@@ -51,21 +51,3 @@ process PrepareReference {
     prepare_reference.py ${reference} >cleaned_reference.fa
     """
 }
-
-process FindSubtypes {
-    tag "${id}"
-
-    memory '500 MB'
-    time '1h'
-
-    input:
-    tuple val(id), path(coverage)
-
-    output:
-    tuple val(id), path("alignment_stats.tsv")
-
-    script:
-    """
-    find_subtypes.py ${id} ${coverage} >alignment_stats.tsv
-    """
-}

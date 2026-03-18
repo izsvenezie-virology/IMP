@@ -23,7 +23,7 @@ with pysam.VariantFile(vcf_file, "r") as vcf:
         if info["INDEL"]:
             if info["AF"] > 0.5:
                 indel_count += 1
-                if (len(variant.alleles[0]) + len(variant.alleles[1]) - 2) % 3:
+                if (len(variant.alleles[0]) + len(variant.alleles[1]) - 2) % 3:  # type: ignore
                     frameshifts_count += 1
             continue
 

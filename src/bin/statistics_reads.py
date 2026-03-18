@@ -17,7 +17,7 @@ def parse_fastq(fastq: str, r: str):
     with pysam.FastxFile(fastq) as fq:
         for read in fq:
             quality += sum(read.get_quality_array())
-            quality_count += len(read.sequence)
+            quality_count += len(read.sequence)  # type: ignore
             reads_count += 1
     print(f"{sample_id}\t{r}\tReads {reads_type} count\t{reads_count}")
     print(

@@ -9,18 +9,19 @@ from collections import defaultdict
 
 
 def select_subtypes(subtypes):
-    max_count = max(sum(refs.values()) for refs in subtypes.values()) if subtypes else 0
+    max_count = max(max(refs.values()) for refs in subtypes.values()) if subtypes else 0
+    min_threshold = max_count * 0.05
 
     detected_subtypes = []
     total_hits = []
     best_refs = []
     for subtype, refs in sorted(subtypes.items()):
-        if sum(refs.values()) >= max_count * 0.1:
+        if max(refs.values()) >= min_threshold:
             detected_subtypes.append(subtype)
             total_hits.append(str(sum(refs.values())))
-            best_refs.append(
-                f"{subtype}: {max(refs, key=refs.get)} ({str(max(refs.values()))})"
-            )
+        best_refs.append(
+            f"{subtype}: {max(refs, key=refs.get)} ({str(max(refs.values()))})"
+        )
     return detected_subtypes, total_hits, best_refs
 
 

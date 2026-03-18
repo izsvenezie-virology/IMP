@@ -32,7 +32,7 @@ def remove_degenerations(sequence):
             near_count = dict.fromkeys(deg_dict[nucl], 0)
             for key in near_count.keys():
                 near_count[key] = near.count(key)
-            seq[pos] = min(near_count, key=near_count.get)
+            seq[pos] = min(near_count, key=near_count.get)  # type: ignore
     return "".join(seq)
 
 
