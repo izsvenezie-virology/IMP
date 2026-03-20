@@ -1,4 +1,4 @@
-# imp: Illumina Multipurpose Pipeline
+# IMP: Illumina Multipurpose Pipeline
 
 `imp` is a Nextflow pipeline that processes paired-end Illumina reads.
 The main workflow is in [`src/main.nf`](./src/main.nf).
@@ -197,4 +197,4 @@ Main outputs (written relative to `outputDir`, default `.`):
 | `results/<group>_genin2.tsv`     | Genin2 results (`AIV` virus only)                                |
 | `results/subtypes.tsv`           | Subtypes detected for each sample (`AIV` and `SIV` viruses only) |
 | `results/statistics.tsv`         | Aggregated run statistics                                        |
-| `warnings`                       | Warnings triggered by the pipeline                               |
+| `warnings/`                      | Warnings triggered by the pipeline                               |
